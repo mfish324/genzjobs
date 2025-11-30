@@ -26,11 +26,20 @@ yarn-debug.log*
 yarn-error.log*
 
 # local env files
+.env
 .env*.local
 
 # vercel
 .vercel
 
+# scraper
+scraper/venv/
+scraper/__pycache__/
+scraper/*.pyc
+scraper/.env
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+/src/generated/prisma

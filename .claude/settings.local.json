@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(powershell -Command \"Remove-Item -Path ''C:\\Users\\matto\\projects\\GenzJobs\\genzjobs-app'' -Recurse -Force\")",
+      "Bash(npx --yes shadcn@latest init:*)",
+      "Bash(npx shadcn@latest add:*)",
+      "Bash(npm install:*)",
+      "Bash(npx prisma init)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

@@ -1,0 +1,593 @@
+// GenZJobs - Gamified Job Board Platform
+// Prisma Schema for PostgreSQL (Neon Serverless)
+// Connection URLs configured in prisma.config.ts
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ==================== Authentication ====================
+
+model User {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  emailVerified  DateTime?
+  passwordHash   String?
+  name           String?
+  image          String?
+  bio            String?
+
+  // Gamification
+  xp             Int       @default(0)
+  level          Int       @default(1)
+
+  // Profile
+  skills         String[]  @default([])
+  experience     String?   // "entry", "mid", "senior"
+  jobTypes       String[]  @default([]) // "full-time", "part-time", "contract", "internship"
+  locations      String[]  @default([]) // Preferred locations
+  remoteOnly     Boolean   @default(false)
+
+  // Timestamps
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  lastLoginAt    DateTime?
+
+  // Relations
+  accounts       Account[]
+  sessions       Session[]
+  applications   Application[]
+  userQuests     UserQuest[]
+  userRewards    UserReward[]
+  chatMessages   ChatMessage[]
+  eventRegistrations EventRegistration[]
+
+  // Employer relation (if user is an employer)
+  employer       Employer?
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ==================== Jobs ====================
+
+model JobListing {
+  id              String   @id @default(cuid())
+
+  // Basic Info
+  title           String
+  company         String
+  companyLogo     String?
+  location        String?
+  jobType         String?  // "full-time", "part-time", "contract", "internship"
+  experienceLevel String?  // "entry", "mid", "senior"
+
+  // Details
+  description     String   @db.Text
+  requirements    String?  @db.Text
+  benefits        String?  @db.Text
+  salaryMin       Int?
+  salaryMax       Int?
+  salaryCurrency  String?  @default("USD")
+  salaryPeriod    String?  @default("yearly") // "hourly", "yearly"
+
+  // Metadata
+  skills          String[] @default([])
+  remote          Boolean  @default(false)
+  applyUrl        String?
+  companyWebsite  String?
+
+  // Source tracking
+  source          String   // "scraper", "api", "employer"
+  sourceId        String?  // External ID from source
+  sourceUrl       String?  // Original URL
+
+  // XP calculation
+  difficultyLevel Int      @default(1) // 1-5, affects XP reward
+
+  // Status
+  isActive        Boolean  @default(true)
+  postedAt        DateTime @default(now())
+  expiresAt       DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  applications    Application[]
+
+  // Deduplication
+  @@unique([source, sourceId])
+  @@index([isActive, postedAt])
+  @@index([company])
+  @@index([skills])
+  @@map("job_listings")
+}
+
+model EmployerJobPosting {
+  id              String   @id @default(cuid())
+  employerId      String
+
+  // Basic Info
+  title           String
+  location        String?
+  jobType         String?
+  experienceLevel String?
+
+  // Details
+  description     String   @db.Text
+  requirements    String?  @db.Text
+  responsibilities String? @db.Text
+  benefits        String?  @db.Text
+  salaryMin       Int?
+  salaryMax       Int?
+  salaryCurrency  String?  @default("USD")
+  salaryPeriod    String?  @default("yearly")
+
+  // Metadata
+  skills          String[] @default([])
+  remote          Boolean  @default(false)
+  applicationInstructions String? @db.Text
+
+  // Status
+  isActive        Boolean  @default(true)
+  isFeatured      Boolean  @default(false)
+  postedAt        DateTime @default(now())
+  expiresAt       DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  employer        Employer @relation(fields: [employerId], references: [id], onDelete: Cascade)
+  applications    EmployerApplication[]
+
+  @@index([employerId, isActive])
+  @@map("employer_job_postings")
+}
+
+// ==================== Applications ====================
+
+model Application {
+  id           String   @id @default(cuid())
+  userId       String
+  jobListingId String
+
+  // Status tracking
+  status       String   @default("applied") // "applied", "interviewing", "offered", "rejected", "withdrawn"
+
+  // XP tracking
+  xpEarned     Int      @default(0)
+
+  // Notes
+  notes        String?  @db.Text
+  resumeUrl    String?
+  coverLetter  String?  @db.Text
+
+  // Timestamps
+  appliedAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobListing   JobListing @relation(fields: [jobListingId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, jobListingId])
+  @@index([userId, status])
+  @@map("applications")
+}
+
+model EmployerApplication {
+  id                   String   @id @default(cuid())
+  employerJobPostingId String
+
+  // Applicant info (can be registered user or external)
+  applicantName        String
+  applicantEmail       String
+  applicantPhone       String?
+  resumeUrl            String?
+  coverLetter          String?  @db.Text
+  linkedinUrl          String?
+  portfolioUrl         String?
+
+  // Status
+  status               String   @default("new") // "new", "reviewing", "interviewing", "offered", "rejected"
+  rating               Int?     // 1-5 employer rating
+  notes                String?  @db.Text
+
+  // Timestamps
+  appliedAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  // Relations
+  jobPosting           EmployerJobPosting @relation(fields: [employerJobPostingId], references: [id], onDelete: Cascade)
+
+  @@index([employerJobPostingId, status])
+  @@map("employer_applications")
+}
+
+// ==================== Gamification ====================
+
+model Quest {
+  id          String   @id @default(cuid())
+
+  // Quest info
+  title       String
+  description String
+  type        String   // "daily", "weekly", "milestone"
+
+  // Requirements
+  action      String   // "apply_jobs", "complete_profile", "attend_event", "login", etc.
+  targetCount Int      @default(1)
+
+  // Reward
+  xpReward    Int
+
+  // Status
+  isActive    Boolean  @default(true)
+
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  userQuests  UserQuest[]
+
+  @@map("quests")
+}
+
+model UserQuest {
+  id          String    @id @default(cuid())
+  userId      String
+  questId     String
+
+  // Progress
+  progress    Int       @default(0)
+  isCompleted Boolean   @default(false)
+  completedAt DateTime?
+
+  // For recurring quests
+  periodStart DateTime? // Start of daily/weekly period
+
+  // Timestamps
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quest       Quest     @relation(fields: [questId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questId, periodStart])
+  @@index([userId, isCompleted])
+  @@map("user_quests")
+}
+
+model Reward {
+  id          String   @id @default(cuid())
+
+  // Reward info
+  title       String
+  description String   @db.Text
+  category    String   // "career_service", "merchandise", "gift_card", "experience"
+
+  // Cost
+  xpCost      Int
+
+  // Availability
+  isActive    Boolean  @default(true)
+  quantity    Int?     // null = unlimited
+
+  // Image
+  imageUrl    String?
+
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  userRewards UserReward[]
+
+  @@map("rewards")
+}
+
+model UserReward {
+  id         String   @id @default(cuid())
+  userId     String
+  rewardId   String
+
+  // Redemption details
+  xpSpent    Int
+  status     String   @default("pending") // "pending", "processing", "fulfilled", "cancelled"
+  notes      String?
+
+  // Timestamps
+  redeemedAt DateTime @default(now())
+  fulfilledAt DateTime?
+
+  // Relations
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reward     Reward   @relation(fields: [rewardId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("user_rewards")
+}
+
+// ==================== Community ====================
+
+model ChatRoom {
+  id          String   @id @default(cuid())
+
+  // Room info
+  name        String
+  description String?
+  slug        String   @unique
+  icon        String?  // Emoji or icon name
+
+  // Settings
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  messages    ChatMessage[]
+
+  @@map("chat_rooms")
+}
+
+model ChatMessage {
+  id         String   @id @default(cuid())
+  chatRoomId String
+  userId     String
+
+  // Message content
+  content    String   @db.Text
+
+  // Metadata
+  isEdited   Boolean  @default(false)
+  isDeleted  Boolean  @default(false)
+
+  // Timestamps
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relations
+  chatRoom   ChatRoom @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([chatRoomId, createdAt])
+  @@map("chat_messages")
+}
+
+model Event {
+  id          String   @id @default(cuid())
+
+  // Event info
+  title       String
+  description String   @db.Text
+  type        String   // "workshop", "qa", "game_night", "networking"
+
+  // Schedule
+  startTime   DateTime
+  endTime     DateTime?
+  timezone    String   @default("UTC")
+
+  // Location
+  isVirtual   Boolean  @default(true)
+  location    String?  // Physical location or virtual meeting URL
+  meetingUrl  String?
+
+  // Capacity
+  maxAttendees Int?
+
+  // XP reward for attendance
+  xpReward    Int      @default(25)
+
+  // Image
+  imageUrl    String?
+
+  // Status
+  isActive    Boolean  @default(true)
+
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  registrations EventRegistration[]
+
+  @@index([startTime, isActive])
+  @@map("events")
+}
+
+model EventRegistration {
+  id        String    @id @default(cuid())
+  eventId   String
+  userId    String
+
+  // Status
+  status    String    @default("registered") // "registered", "attended", "cancelled"
+  attendedAt DateTime?
+  xpEarned  Int       @default(0)
+
+  // Timestamps
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  // Relations
+  event     Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@map("event_registrations")
+}
+
+// ==================== Resources ====================
+
+model Resource {
+  id          String   @id @default(cuid())
+
+  // Resource info
+  title       String
+  description String   @db.Text
+  type        String   // "article", "video", "podcast", "course", "tool"
+
+  // Content
+  url         String
+  imageUrl    String?
+
+  // Why it matters (Gen-Z friendly explanation)
+  whyItMatters String? @db.Text
+
+  // Categorization
+  tags        String[] @default([])
+  category    String?  // "resume", "interview", "networking", "skills", "mindset"
+
+  // Engagement
+  clickCount  Int      @default(0)
+
+  // Status
+  isActive    Boolean  @default(true)
+  isFeatured  Boolean  @default(false)
+
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([type, isActive])
+  @@index([tags])
+  @@map("resources")
+}
+
+// ==================== Company Intelligence ====================
+
+model Company {
+  id            String   @id @default(cuid())
+
+  // Basic info
+  name          String   @unique
+  website       String?
+  logoUrl       String?
+  industry      String?
+  size          String?  // "startup", "small", "medium", "large", "enterprise"
+
+  // AI-generated content
+  summary       String?  @db.Text  // Gen-Z friendly company overview
+  culture       String?  @db.Text  // Culture and work environment
+  growthOpportunities String? @db.Text
+
+  // Social links
+  linkedinUrl   String?
+  glassdoorUrl  String?
+
+  // Recent news (JSON array of news items)
+  recentNews    Json?
+
+  // Metadata
+  lastEnriched  DateTime?
+
+  // Timestamps
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("companies")
+}
+
+// ==================== Employers ====================
+
+model Employer {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+
+  // Company info
+  companyName   String
+  website       String?
+  logoUrl       String?
+  industry      String?
+  size          String?  // "startup", "small", "medium", "large", "enterprise"
+  description   String?  @db.Text
+
+  // Location
+  headquarters  String?
+
+  // Verification
+  isVerified    Boolean  @default(false)
+  verifiedAt    DateTime?
+
+  // Status
+  isActive      Boolean  @default(true)
+
+  // Timestamps
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobPostings   EmployerJobPosting[]
+
+  @@map("employers")
+}
+
+// ==================== XP Transactions ====================
+
+model XpTransaction {
+  id          String   @id @default(cuid())
+  userId      String
+
+  // Transaction details
+  amount      Int      // Positive for earned, negative for spent
+  type        String   // "application", "quest", "event", "reward_redemption", "bonus", etc.
+  description String
+
+  // Reference to related entity
+  referenceId   String?
+  referenceType String?
+
+  // Timestamps
+  createdAt   DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@map("xp_transactions")
+}
