@@ -74,7 +74,7 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  const totalApplications = applicationStats.reduce((acc, s) => acc + s._count, 0);
+  const totalApplications = applicationStats.reduce((acc: number, s: { status: string; _count: number }) => acc + s._count, 0);
   const interviewingCount = applicationStats.find((s) => s.status === "interviewing")?._count || 0;
   const offeredCount = applicationStats.find((s) => s.status === "offered")?._count || 0;
 
