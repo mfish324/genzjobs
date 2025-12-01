@@ -3,6 +3,7 @@ from .remotive import RemotiveScraper
 from .arbeitnow import ArbeitnowScraper
 from .jsearch import JSearchScraper
 from .usajobs import USAJobsScraper
+from .apprenticeship import ApprenticeshipScraper
 
 __all__ = [
     "BaseScraper",
@@ -10,4 +11,5 @@ __all__ = [
     "ArbeitnowScraper",
     "JSearchScraper",
     "USAJobsScraper",
+    "ApprenticeshipScraper",
 ]

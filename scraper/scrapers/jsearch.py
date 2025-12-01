@@ -4,8 +4,8 @@ from typing import List, Optional
 from datetime import datetime
 
 from .base import BaseScraper
-from models import ScrapedJob
-from config import MAX_JOBS_PER_SOURCE, TECH_SKILLS, RAPIDAPI_KEY
+from models import ScrapedJob, JobCategory
+from config import MAX_JOBS_PER_SOURCE, TECH_SKILLS, TRADES_SKILLS, PUBLIC_SAFETY_SKILLS, HEALTHCARE_SKILLS, RAPIDAPI_KEY
 
 logger = logging.getLogger(__name__)
 
@@ -29,20 +29,42 @@ class JSearchScraper(BaseScraper):
             logger.warning("RAPIDAPI_KEY not set, skipping JSearch scraper")
             return jobs
 
-        # Search queries targeting Gen-Z relevant jobs
-        search_queries = [
-            "entry level software developer",
-            "junior developer",
-            "software engineer intern",
-            "junior data analyst",
-            "entry level web developer",
+        # Search queries by category
+        search_configs = [
+            # Tech jobs
+            {"query": "entry level software developer", "category": JobCategory.TECH},
+            {"query": "junior developer", "category": JobCategory.TECH},
+            {"query": "software engineer intern", "category": JobCategory.TECH},
+            {"query": "junior data analyst", "category": JobCategory.TECH},
+            {"query": "entry level web developer", "category": JobCategory.TECH},
+            # Trades jobs
+            {"query": "entry level electrician", "category": JobCategory.TRADES},
+            {"query": "electrician apprentice", "category": JobCategory.TRADES},
+            {"query": "entry level plumber", "category": JobCategory.TRADES},
+            {"query": "hvac technician entry level", "category": JobCategory.TRADES},
+            {"query": "welder apprentice", "category": JobCategory.TRADES},
+            {"query": "carpenter apprentice", "category": JobCategory.TRADES},
+            {"query": "construction laborer entry level", "category": JobCategory.TRADES},
+            # Public Safety jobs
+            {"query": "entry level police officer", "category": JobCategory.PUBLIC_SAFETY},
+            {"query": "firefighter trainee", "category": JobCategory.PUBLIC_SAFETY},
+            {"query": "emt entry level", "category": JobCategory.PUBLIC_SAFETY},
+            {"query": "security officer entry level", "category": JobCategory.PUBLIC_SAFETY},
+            {"query": "911 dispatcher", "category": JobCategory.PUBLIC_SAFETY},
+            # Healthcare jobs
+            {"query": "cna entry level", "category": JobCategory.HEALTHCARE},
+            {"query": "medical assistant entry level", "category": JobCategory.HEALTHCARE},
+            {"query": "phlebotomist entry level", "category": JobCategory.HEALTHCARE},
         ]
 
         try:
             async with httpx.AsyncClient() as client:
-                for query in search_queries:
+                for config in search_configs:
                     if len(jobs) >= MAX_JOBS_PER_SOURCE:
                         break
+
+                    query = config["query"]
+                    category = config["category"]
 
                     await self.rate_limit()
 
@@ -75,7 +97,7 @@ class JSearchScraper(BaseScraper):
                             break
 
                         try:
-                            job = self._parse_job(raw_job)
+                            job = self._parse_job(raw_job, category)
                             if job and not self._job_exists(jobs, job):
                                 jobs.append(job)
                         except Exception as e:
@@ -95,7 +117,7 @@ class JSearchScraper(BaseScraper):
         """Check if job already exists in list (by external_id)"""
         return any(job.external_id == new_job.external_id for job in jobs)
 
-    def _parse_job(self, raw_job: dict) -> Optional[ScrapedJob]:
+    def _parse_job(self, raw_job: dict, category: JobCategory = JobCategory.TECH) -> Optional[ScrapedJob]:
         """Parse a raw job from JSearch API"""
         job_id = raw_job.get("job_id")
         if not job_id:
@@ -127,8 +149,9 @@ class JSearchScraper(BaseScraper):
         employment_type = raw_job.get("job_employment_type", "")
         job_type = self._map_job_type(employment_type)
 
-        # Extract skills from description
-        skills = self.extract_skills(description + " " + title, TECH_SKILLS)
+        # Extract skills based on category
+        skill_list = self._get_skills_for_category(category)
+        skills = self.extract_skills(description + " " + title, skill_list)
 
         # Parse posted date
         posted_at = None
@@ -180,6 +203,7 @@ class JSearchScraper(BaseScraper):
             location=location,
             job_type=job_type,
             experience_level=experience_level,
+            category=category,
             description=description,
             salary_min=int(salary_min) if salary_min else None,
             salary_max=int(salary_max) if salary_max else None,
@@ -190,6 +214,17 @@ class JSearchScraper(BaseScraper):
             apply_url=raw_job.get("job_apply_link", ""),
             posted_at=posted_at,
         )
+
+    def _get_skills_for_category(self, category: JobCategory) -> List[str]:
+        """Get skill list based on job category"""
+        if category == JobCategory.TRADES:
+            return TRADES_SKILLS
+        elif category == JobCategory.PUBLIC_SAFETY:
+            return PUBLIC_SAFETY_SKILLS
+        elif category == JobCategory.HEALTHCARE:
+            return HEALTHCARE_SKILLS
+        else:
+            return TECH_SKILLS
 
     def _map_job_type(self, employment_type: str) -> str:
         """Map JSearch employment type to our job type"""

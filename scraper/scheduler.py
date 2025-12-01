@@ -7,7 +7,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 
 from config import SCRAPE_INTERVAL_MINUTES, JOB_SOURCES
-from scrapers import RemotiveScraper, ArbeitnowScraper, JSearchScraper, USAJobsScraper
+from scrapers import RemotiveScraper, ArbeitnowScraper, JSearchScraper, USAJobsScraper, ApprenticeshipScraper
 from database import db
 from models import ScrapeResult
 
@@ -70,6 +70,8 @@ class ScraperScheduler:
                     scrapers.append(JSearchScraper())
                 if JOB_SOURCES.get("usajobs", {}).get("enabled"):
                     scrapers.append(USAJobsScraper())
+                if JOB_SOURCES.get("apprenticeship", {}).get("enabled"):
+                    scrapers.append(ApprenticeshipScraper())
 
                 # Run each scraper
                 for scraper in scrapers:
@@ -120,6 +122,8 @@ class ScraperScheduler:
             scraper = JSearchScraper()
         elif source == "usajobs":
             scraper = USAJobsScraper()
+        elif source == "apprenticeship":
+            scraper = ApprenticeshipScraper()
         else:
             return None
 

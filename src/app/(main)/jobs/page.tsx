@@ -34,7 +34,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { EXPERIENCE_LEVELS, JOB_TYPES, XP_REWARDS } from "@/lib/constants";
+import { EXPERIENCE_LEVELS, JOB_TYPES, JOB_CATEGORIES, XP_REWARDS } from "@/lib/constants";
 
 interface Job {
   id: string;
@@ -44,6 +44,7 @@ interface Job {
   location: string | null;
   jobType: string | null;
   experienceLevel: string | null;
+  category: string | null;
   salaryMin: number | null;
   salaryMax: number | null;
   salaryCurrency: string | null;
@@ -77,6 +78,7 @@ function JobsContent() {
   const [experienceLevel, setExperienceLevel] = useState(
     searchParams.get("experienceLevel") || "all"
   );
+  const [category, setCategory] = useState(searchParams.get("category") || "all");
   const [remote, setRemote] = useState(searchParams.get("remote") === "true");
   const [page, setPage] = useState(parseInt(searchParams.get("page") || "1"));
 
@@ -88,6 +90,7 @@ function JobsContent() {
       if (location) params.set("location", location);
       if (jobType && jobType !== "all") params.set("jobType", jobType);
       if (experienceLevel && experienceLevel !== "all") params.set("experienceLevel", experienceLevel);
+      if (category && category !== "all") params.set("category", category);
       if (remote) params.set("remote", "true");
       params.set("page", page.toString());
 
@@ -109,7 +112,7 @@ function JobsContent() {
     } finally {
       setIsLoading(false);
     }
-  }, [search, location, jobType, experienceLevel, remote, page]);
+  }, [search, location, jobType, experienceLevel, category, remote, page]);
 
   useEffect(() => {
     fetchJobs();
@@ -125,6 +128,7 @@ function JobsContent() {
     setLocation("");
     setJobType("all");
     setExperienceLevel("all");
+    setCategory("all");
     setRemote(false);
     setPage(1);
   };
@@ -163,12 +167,43 @@ function JobsContent() {
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-6">
         <h1 className="text-3xl font-bold mb-2">Find Your Next Adventure</h1>
         <p className="text-muted-foreground">
           Discover jobs that match your skills and earn {XP_REWARDS.JOB_APPLICATION} XP for each
           application!
         </p>
+      </div>
+
+      {/* Category Tabs */}
+      <div className="mb-6">
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant={category === "all" ? "default" : "outline"}
+            size="sm"
+            onClick={() => { setCategory("all"); setPage(1); }}
+            className={category === "all" ? "bg-violet-500 hover:bg-violet-600" : ""}
+          >
+            All Jobs
+          </Button>
+          {JOB_CATEGORIES.map((cat) => (
+            <Button
+              key={cat.value}
+              variant={category === cat.value ? "default" : "outline"}
+              size="sm"
+              onClick={() => { setCategory(cat.value); setPage(1); }}
+              className={category === cat.value ? "bg-violet-500 hover:bg-violet-600" : ""}
+            >
+              <span className="mr-1.5">{cat.icon}</span>
+              {cat.label}
+            </Button>
+          ))}
+        </div>
+        {category !== "all" && (
+          <p className="text-sm text-muted-foreground mt-2">
+            {JOB_CATEGORIES.find(c => c.value === category)?.description}
+          </p>
+        )}
       </div>
 
       {/* Search & Filters */}
@@ -302,7 +337,7 @@ function JobsContent() {
             Remote
           </Button>
 
-          {(search || location || jobType !== "all" || experienceLevel !== "all" || remote) && (
+          {(search || location || jobType !== "all" || experienceLevel !== "all" || category !== "all" || remote) && (
             <Button variant="ghost" size="sm" onClick={clearFilters}>
               Clear filters
             </Button>
@@ -397,6 +432,12 @@ function JobsContent() {
                           <Badge variant="secondary" className="text-xs">
                             <Wifi className="w-3 h-3 mr-1" />
                             Remote
+                          </Badge>
+                        )}
+                        {job.category && job.category !== "tech" && (
+                          <Badge variant="secondary" className="text-xs bg-amber-100 text-amber-800 border-amber-200">
+                            {JOB_CATEGORIES.find(c => c.value === job.category)?.icon}{" "}
+                            {JOB_CATEGORIES.find(c => c.value === job.category)?.label}
                           </Badge>
                         )}
                       </div>

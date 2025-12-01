@@ -44,10 +44,20 @@ export const JOB_TYPES = [
   { value: "part-time", label: "Part-time" },
   { value: "contract", label: "Contract" },
   { value: "internship", label: "Internship" },
+  { value: "apprenticeship", label: "Apprenticeship" },
+] as const;
+
+// Job categories
+export const JOB_CATEGORIES = [
+  { value: "tech", label: "Tech", icon: "💻", description: "Software, IT, Data & Digital" },
+  { value: "trades", label: "Trades", icon: "🔧", description: "Electrician, Plumber, HVAC, Construction" },
+  { value: "public-safety", label: "Public Safety", icon: "🚒", description: "Police, Fire, EMT, Security" },
+  { value: "healthcare", label: "Healthcare", icon: "🏥", description: "Medical, Nursing, Allied Health" },
+  { value: "apprenticeship", label: "Apprenticeships", icon: "📚", description: "Paid Training Programs" },
 ] as const;
 
 // Common skills for tech jobs
-export const COMMON_SKILLS = [
+export const TECH_SKILLS = [
   "JavaScript",
   "TypeScript",
   "React",
@@ -75,11 +85,73 @@ export const COMMON_SKILLS = [
   "Kotlin",
   "Machine Learning",
   "Data Analysis",
+] as const;
+
+// Trades skills
+export const TRADES_SKILLS = [
+  "Electrical Systems",
+  "Plumbing",
+  "HVAC",
+  "Welding",
+  "Carpentry",
+  "Blueprint Reading",
+  "Construction",
+  "Masonry",
+  "Pipefitting",
+  "Sheet Metal",
+  "Heavy Equipment",
+  "Automotive Repair",
+  "CNC Machining",
+  "Industrial Maintenance",
+  "Safety Compliance",
+  "OSHA Certified",
+] as const;
+
+// Public safety skills
+export const PUBLIC_SAFETY_SKILLS = [
+  "Emergency Response",
+  "First Aid/CPR",
+  "EMT Certified",
+  "Paramedic",
+  "Firefighting",
+  "Law Enforcement",
+  "Crisis Management",
+  "Physical Fitness",
+  "Dispatch",
+  "Investigation",
+  "Security Operations",
+  "Crowd Control",
+] as const;
+
+// Healthcare skills
+export const HEALTHCARE_SKILLS = [
+  "Patient Care",
+  "Nursing",
+  "Medical Terminology",
+  "Phlebotomy",
+  "Medical Records",
+  "HIPAA Compliance",
+  "Vital Signs",
+  "EKG/ECG",
+  "Medical Billing",
+  "CNA Certified",
+  "LPN",
+  "RN",
+] as const;
+
+// Combined skills for all categories
+export const COMMON_SKILLS = [
+  ...TECH_SKILLS,
+  ...TRADES_SKILLS,
+  ...PUBLIC_SAFETY_SKILLS,
+  ...HEALTHCARE_SKILLS,
   "Excel",
   "Communication",
   "Problem Solving",
   "Leadership",
   "Project Management",
+  "Teamwork",
+  "Customer Service",
 ] as const;
 
 // Application statuses

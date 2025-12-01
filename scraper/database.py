@@ -89,7 +89,8 @@ class Database:
                                 skills = $9,
                                 remote = $10,
                                 "applyUrl" = $11,
-                                "updatedAt" = $12
+                                "updatedAt" = $12,
+                                category = $14
                             WHERE source = $1 AND "sourceId" = $13
                             ''',
                             job.source,
@@ -105,6 +106,7 @@ class Database:
                             job.apply_url,
                             datetime.utcnow(),
                             job.external_id,
+                            job.category.value if hasattr(job.category, 'value') else str(job.category),
                         )
                         updated += 1
                     else:
@@ -113,14 +115,14 @@ class Database:
                             '''
                             INSERT INTO "job_listings" (
                                 id, "sourceId", source, title, company, "companyLogo",
-                                location, "jobType", "experienceLevel", description,
+                                location, "jobType", "experienceLevel", category, description,
                                 "salaryMin", "salaryMax", "salaryCurrency", skills,
                                 remote, "applyUrl", "postedAt", "createdAt", "updatedAt"
                             ) VALUES (
                                 gen_random_uuid(), $1, $2, $3, $4, $5,
-                                $6, $7, $8, $9,
-                                $10, $11, $12, $13,
-                                $14, $15, $16, $17, $18
+                                $6, $7, $8, $9, $10,
+                                $11, $12, $13, $14,
+                                $15, $16, $17, $18, $19
                             )
                             ''',
                             job.external_id,
@@ -131,6 +133,7 @@ class Database:
                             job.location,
                             job.job_type,
                             job.experience_level,
+                            job.category.value if hasattr(job.category, 'value') else str(job.category),
                             job.description,
                             job.salary_min,
                             job.salary_max,

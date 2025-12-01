@@ -101,8 +101,9 @@ model JobListing {
   company         String
   companyLogo     String?
   location        String?
-  jobType         String?  // "full-time", "part-time", "contract", "internship"
+  jobType         String?  // "full-time", "part-time", "contract", "internship", "apprenticeship"
   experienceLevel String?  // "entry", "mid", "senior"
+  category        String   @default("tech") // "tech", "trades", "public-safety", "healthcare", "apprenticeship"
 
   // Details
   description     String   @db.Text
@@ -140,6 +141,7 @@ model JobListing {
   // Deduplication
   @@unique([source, sourceId])
   @@index([isActive, postedAt])
+  @@index([isActive, category])
   @@index([company])
   @@index([skills])
   @@map("job_listings")

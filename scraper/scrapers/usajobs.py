@@ -4,8 +4,8 @@ from typing import List, Optional
 from datetime import datetime
 
 from .base import BaseScraper
-from models import ScrapedJob
-from config import MAX_JOBS_PER_SOURCE, TECH_SKILLS, USAJOBS_API_KEY, USAJOBS_EMAIL
+from models import ScrapedJob, JobCategory
+from config import MAX_JOBS_PER_SOURCE, TECH_SKILLS, TRADES_SKILLS, PUBLIC_SAFETY_SKILLS, HEALTHCARE_SKILLS, USAJOBS_API_KEY, USAJOBS_EMAIL
 
 logger = logging.getLogger(__name__)
 
@@ -30,20 +30,41 @@ class USAJobsScraper(BaseScraper):
             logger.warning("USAJOBS_API_KEY or USAJOBS_EMAIL not set, skipping USAJobs scraper")
             return jobs
 
-        # Search queries targeting entry-level and tech jobs
-        search_queries = [
-            {"Keyword": "software developer", "JobGradeCode": "5/7/9"},  # Entry level grades
-            {"Keyword": "data analyst", "JobGradeCode": "5/7/9"},
-            {"Keyword": "IT specialist", "JobGradeCode": "5/7/9"},
-            {"Keyword": "computer scientist", "JobGradeCode": "5/7/9"},
-            {"Keyword": "recent graduate", "HiringPath": "student"},
+        # Search queries by category targeting entry-level federal jobs
+        search_configs = [
+            # Tech jobs
+            {"params": {"Keyword": "software developer", "JobGradeCode": "5/7/9"}, "category": JobCategory.TECH},
+            {"params": {"Keyword": "data analyst", "JobGradeCode": "5/7/9"}, "category": JobCategory.TECH},
+            {"params": {"Keyword": "IT specialist", "JobGradeCode": "5/7/9"}, "category": JobCategory.TECH},
+            {"params": {"Keyword": "computer scientist", "JobGradeCode": "5/7/9"}, "category": JobCategory.TECH},
+            {"params": {"Keyword": "recent graduate", "HiringPath": "student"}, "category": JobCategory.TECH},
+            # Trades jobs
+            {"params": {"Keyword": "electrician", "JobGradeCode": "5/7/9"}, "category": JobCategory.TRADES},
+            {"params": {"Keyword": "mechanic", "JobGradeCode": "5/7/9"}, "category": JobCategory.TRADES},
+            {"params": {"Keyword": "maintenance worker", "JobGradeCode": "5/7/9"}, "category": JobCategory.TRADES},
+            {"params": {"Keyword": "hvac technician", "JobGradeCode": "5/7/9"}, "category": JobCategory.TRADES},
+            {"params": {"Keyword": "carpenter", "JobGradeCode": "5/7/9"}, "category": JobCategory.TRADES},
+            {"params": {"Keyword": "welder", "JobGradeCode": "5/7/9"}, "category": JobCategory.TRADES},
+            # Public Safety jobs
+            {"params": {"Keyword": "police officer", "JobGradeCode": "5/7/9"}, "category": JobCategory.PUBLIC_SAFETY},
+            {"params": {"Keyword": "firefighter", "JobGradeCode": "5/7/9"}, "category": JobCategory.PUBLIC_SAFETY},
+            {"params": {"Keyword": "security guard", "JobGradeCode": "5/7/9"}, "category": JobCategory.PUBLIC_SAFETY},
+            {"params": {"Keyword": "park ranger", "JobGradeCode": "5/7/9"}, "category": JobCategory.PUBLIC_SAFETY},
+            {"params": {"Keyword": "correctional officer", "JobGradeCode": "5/7/9"}, "category": JobCategory.PUBLIC_SAFETY},
+            # Healthcare jobs
+            {"params": {"Keyword": "nurse", "JobGradeCode": "5/7/9"}, "category": JobCategory.HEALTHCARE},
+            {"params": {"Keyword": "medical technician", "JobGradeCode": "5/7/9"}, "category": JobCategory.HEALTHCARE},
+            {"params": {"Keyword": "healthcare", "JobGradeCode": "5/7/9"}, "category": JobCategory.HEALTHCARE},
         ]
 
         try:
             async with httpx.AsyncClient() as client:
-                for query_params in search_queries:
+                for config in search_configs:
                     if len(jobs) >= MAX_JOBS_PER_SOURCE:
                         break
+
+                    query_params = config["params"]
+                    category = config["category"]
 
                     await self.rate_limit()
 
@@ -69,7 +90,7 @@ class USAJobsScraper(BaseScraper):
 
                     search_result = data.get("SearchResult", {})
                     raw_jobs = search_result.get("SearchResultItems", [])
-                    logger.info(f"USAJobs query returned {len(raw_jobs)} jobs")
+                    logger.info(f"USAJobs query '{query_params.get('Keyword', '')}' returned {len(raw_jobs)} jobs")
 
                     for item in raw_jobs:
                         if len(jobs) >= MAX_JOBS_PER_SOURCE:
@@ -77,7 +98,7 @@ class USAJobsScraper(BaseScraper):
 
                         raw_job = item.get("MatchedObjectDescriptor", {})
                         try:
-                            job = self._parse_job(raw_job)
+                            job = self._parse_job(raw_job, category)
                             if job and not self._job_exists(jobs, job):
                                 jobs.append(job)
                         except Exception as e:
@@ -97,7 +118,7 @@ class USAJobsScraper(BaseScraper):
         """Check if job already exists in list (by external_id)"""
         return any(job.external_id == new_job.external_id for job in jobs)
 
-    def _parse_job(self, raw_job: dict) -> Optional[ScrapedJob]:
+    def _parse_job(self, raw_job: dict, category: JobCategory = JobCategory.TECH) -> Optional[ScrapedJob]:
         """Parse a raw job from USAJobs API"""
         position_id = raw_job.get("PositionID")
         if not position_id:
@@ -144,8 +165,9 @@ class USAJobsScraper(BaseScraper):
         else:
             job_type = "Full-time"
 
-        # Extract skills
-        skills = self.extract_skills(full_description + " " + title, TECH_SKILLS)
+        # Extract skills based on category
+        skill_list = self._get_skills_for_category(category)
+        skills = self.extract_skills(full_description + " " + title, skill_list)
 
         # Posted date
         posted_at = None
@@ -199,6 +221,7 @@ class USAJobsScraper(BaseScraper):
             location=location,
             job_type=job_type,
             experience_level=experience_level,
+            category=category,
             description=full_description,
             salary_min=salary_min if salary_min else None,
             salary_max=salary_max if salary_max else None,
@@ -209,3 +232,14 @@ class USAJobsScraper(BaseScraper):
             apply_url=apply_url,
             posted_at=posted_at,
         )
+
+    def _get_skills_for_category(self, category: JobCategory) -> List[str]:
+        """Get skill list based on job category"""
+        if category == JobCategory.TRADES:
+            return TRADES_SKILLS
+        elif category == JobCategory.PUBLIC_SAFETY:
+            return PUBLIC_SAFETY_SKILLS
+        elif category == JobCategory.HEALTHCARE:
+            return HEALTHCARE_SKILLS
+        else:
+            return TECH_SKILLS

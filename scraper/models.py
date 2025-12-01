@@ -11,6 +11,15 @@ class JobType(str, Enum):
     INTERNSHIP = "Internship"
     FREELANCE = "Freelance"
     TEMPORARY = "Temporary"
+    APPRENTICESHIP = "Apprenticeship"
+
+
+class JobCategory(str, Enum):
+    TECH = "tech"
+    TRADES = "trades"
+    PUBLIC_SAFETY = "public-safety"
+    HEALTHCARE = "healthcare"
+    APPRENTICESHIP = "apprenticeship"
 
 
 class ExperienceLevel(str, Enum):
@@ -31,11 +40,13 @@ class ScrapedJob(BaseModel):
     location: Optional[str] = None
     job_type: Optional[JobType] = None
     experience_level: Optional[ExperienceLevel] = None
+    category: JobCategory = JobCategory.TECH
     description: str
     requirements: Optional[str] = None
     salary_min: Optional[int] = None
     salary_max: Optional[int] = None
     salary_currency: Optional[str] = "USD"
+    salary_period: Optional[str] = "yearly"
     skills: List[str] = Field(default_factory=list)
     remote: bool = False
     apply_url: str

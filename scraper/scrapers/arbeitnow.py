@@ -4,7 +4,7 @@ from typing import List, Optional
 from datetime import datetime
 
 from .base import BaseScraper
-from models import ScrapedJob
+from models import ScrapedJob, JobCategory
 from config import MAX_JOBS_PER_SOURCE, TECH_SKILLS
 
 logger = logging.getLogger(__name__)
@@ -110,6 +110,7 @@ class ArbeitnowScraper(BaseScraper):
             location=location,
             job_type=job_type,
             experience_level=experience_level,
+            category=JobCategory.TECH,  # Arbeitnow is primarily tech jobs
             description=description,
             skills=skills,
             remote=remote,

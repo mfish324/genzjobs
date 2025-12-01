@@ -10,6 +10,7 @@ export async function GET(req: NextRequest) {
   const location = searchParams.get("location") || "";
   const jobType = searchParams.get("jobType") || "";
   const experienceLevel = searchParams.get("experienceLevel") || "";
+  const category = searchParams.get("category") || "";
   const remote = searchParams.get("remote") === "true";
   const skills = searchParams.get("skills")?.split(",").filter(Boolean) || [];
 
@@ -40,6 +41,10 @@ export async function GET(req: NextRequest) {
     where.experienceLevel = experienceLevel;
   }
 
+  if (category) {
+    where.category = category;
+  }
+
   if (remote) {
     where.remote = true;
   }
@@ -63,6 +68,7 @@ export async function GET(req: NextRequest) {
           location: true,
           jobType: true,
           experienceLevel: true,
+          category: true,
           salaryMin: true,
           salaryMax: true,
           salaryCurrency: true,

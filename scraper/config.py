@@ -43,6 +43,11 @@ JOB_SOURCES = {
         "url": "https://data.usajobs.gov/api/search",
         "type": "api",
     },
+    "apprenticeship": {
+        "enabled": True,
+        "url": "https://www.apprenticeship.gov/api/v1/apprenticeships",
+        "type": "api",
+    },
 }
 
 # Keywords to filter for Gen-Z relevant jobs
@@ -66,4 +71,25 @@ TECH_SKILLS = [
     "sql", "aws", "docker", "git", "html", "css", "vue", "angular",
     "go", "rust", "swift", "kotlin", "flutter", "django", "fastapi",
     "mongodb", "postgresql", "redis", "kubernetes", "terraform",
+]
+
+TRADES_SKILLS = [
+    "electrical", "plumbing", "hvac", "welding", "carpentry", "construction",
+    "masonry", "pipefitting", "sheet metal", "machining", "cnc", "automotive",
+    "diesel", "electrician", "mechanical", "blueprint", "safety", "osha",
+    "maintenance", "repair", "installation", "wiring", "soldering", "fabrication",
+    "forklift", "heavy equipment", "roofing", "drywall", "painting",
+]
+
+PUBLIC_SAFETY_SKILLS = [
+    "emergency response", "first aid", "cpr", "emt", "paramedic", "firefighting",
+    "law enforcement", "crisis management", "dispatch", "investigation",
+    "security", "patrol", "surveillance", "report writing", "firearms",
+    "defensive tactics", "de-escalation", "public safety", "emergency management",
+]
+
+HEALTHCARE_SKILLS = [
+    "patient care", "nursing", "medical terminology", "phlebotomy", "vital signs",
+    "hipaa", "ekg", "ecg", "medical billing", "cna", "lpn", "rn", "bls",
+    "medication administration", "wound care", "infection control",
 ]
