@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(employer, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: error.errors[0].message }, { status: 400 });
+      return NextResponse.json({ error: error.issues[0].message }, { status: 400 });
     }
 
     console.error("Employer create error:", error);
@@ -103,7 +103,7 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json(employer);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: error.errors[0].message }, { status: 400 });
+      return NextResponse.json({ error: error.issues[0].message }, { status: 400 });
     }
 
     console.error("Employer update error:", error);
