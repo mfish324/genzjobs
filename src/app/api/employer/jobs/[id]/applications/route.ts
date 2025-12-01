@@ -38,21 +38,7 @@ export async function GET(
 
     // Get applications for this job
     const applications = await prisma.employerApplication.findMany({
-      where: { jobPostingId: jobId },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-            title: true,
-            location: true,
-            skills: true,
-            experienceYears: true,
-          },
-        },
-      },
+      where: { employerJobPostingId: jobId },
       orderBy: { appliedAt: "desc" },
     });
 
