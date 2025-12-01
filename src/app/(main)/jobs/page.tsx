@@ -94,10 +94,18 @@ function JobsContent() {
       const res = await fetch(`/api/jobs?${params.toString()}`);
       const data = await res.json();
 
-      setJobs(data.jobs);
-      setPagination(data.pagination);
+      if (data.error) {
+        console.error("API error:", data.error);
+        setJobs([]);
+        setPagination(null);
+      } else {
+        setJobs(data.jobs || []);
+        setPagination(data.pagination || null);
+      }
     } catch (error) {
       console.error("Failed to fetch jobs:", error);
+      setJobs([]);
+      setPagination(null);
     } finally {
       setIsLoading(false);
     }
