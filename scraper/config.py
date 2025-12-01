@@ -16,6 +16,11 @@ API_HOST = os.getenv("API_HOST", "0.0.0.0")
 API_PORT = int(os.getenv("API_PORT", "8000"))
 API_KEY = os.getenv("SCRAPER_API_KEY", "")
 
+# External API keys
+RAPIDAPI_KEY = os.getenv("RAPIDAPI_KEY", "")
+USAJOBS_API_KEY = os.getenv("USAJOBS_API_KEY", "")
+USAJOBS_EMAIL = os.getenv("USAJOBS_EMAIL", "")
+
 # Job sources configuration
 JOB_SOURCES = {
     "remotive": {
@@ -26,6 +31,16 @@ JOB_SOURCES = {
     "arbeitnow": {
         "enabled": True,
         "url": "https://www.arbeitnow.com/api/job-board-api",
+        "type": "api",
+    },
+    "jsearch": {
+        "enabled": bool(RAPIDAPI_KEY),
+        "url": "https://jsearch.p.rapidapi.com/search",
+        "type": "api",
+    },
+    "usajobs": {
+        "enabled": bool(USAJOBS_API_KEY and USAJOBS_EMAIL),
+        "url": "https://data.usajobs.gov/api/search",
         "type": "api",
     },
 }
