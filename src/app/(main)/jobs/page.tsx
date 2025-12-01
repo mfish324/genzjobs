@@ -73,9 +73,9 @@ function JobsContent() {
   // Filter states
   const [search, setSearch] = useState(searchParams.get("search") || "");
   const [location, setLocation] = useState(searchParams.get("location") || "");
-  const [jobType, setJobType] = useState(searchParams.get("jobType") || "");
+  const [jobType, setJobType] = useState(searchParams.get("jobType") || "all");
   const [experienceLevel, setExperienceLevel] = useState(
-    searchParams.get("experienceLevel") || ""
+    searchParams.get("experienceLevel") || "all"
   );
   const [remote, setRemote] = useState(searchParams.get("remote") === "true");
   const [page, setPage] = useState(parseInt(searchParams.get("page") || "1"));
@@ -86,8 +86,8 @@ function JobsContent() {
       const params = new URLSearchParams();
       if (search) params.set("search", search);
       if (location) params.set("location", location);
-      if (jobType) params.set("jobType", jobType);
-      if (experienceLevel) params.set("experienceLevel", experienceLevel);
+      if (jobType && jobType !== "all") params.set("jobType", jobType);
+      if (experienceLevel && experienceLevel !== "all") params.set("experienceLevel", experienceLevel);
       if (remote) params.set("remote", "true");
       params.set("page", page.toString());
 
@@ -123,8 +123,8 @@ function JobsContent() {
   const clearFilters = () => {
     setSearch("");
     setLocation("");
-    setJobType("");
-    setExperienceLevel("");
+    setJobType("all");
+    setExperienceLevel("all");
     setRemote(false);
     setPage(1);
   };
@@ -219,7 +219,7 @@ function JobsContent() {
                       <SelectValue placeholder="All types" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All types</SelectItem>
+                      <SelectItem value="all">All types</SelectItem>
                       {JOB_TYPES.map((type) => (
                         <SelectItem key={type.value} value={type.value}>
                           {type.label}
@@ -235,7 +235,7 @@ function JobsContent() {
                       <SelectValue placeholder="All levels" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All levels</SelectItem>
+                      <SelectItem value="all">All levels</SelectItem>
                       {EXPERIENCE_LEVELS.map((level) => (
                         <SelectItem key={level.value} value={level.value}>
                           {level.label}
@@ -269,7 +269,7 @@ function JobsContent() {
               <SelectValue placeholder="Job Type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All types</SelectItem>
+              <SelectItem value="all">All types</SelectItem>
               {JOB_TYPES.map((type) => (
                 <SelectItem key={type.value} value={type.value}>
                   {type.label}
@@ -283,7 +283,7 @@ function JobsContent() {
               <SelectValue placeholder="Experience Level" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All levels</SelectItem>
+              <SelectItem value="all">All levels</SelectItem>
               {EXPERIENCE_LEVELS.map((level) => (
                 <SelectItem key={level.value} value={level.value}>
                   {level.label}
@@ -302,7 +302,7 @@ function JobsContent() {
             Remote
           </Button>
 
-          {(search || location || jobType || experienceLevel || remote) && (
+          {(search || location || jobType !== "all" || experienceLevel !== "all" || remote) && (
             <Button variant="ghost" size="sm" onClick={clearFilters}>
               Clear filters
             </Button>
