@@ -1,4 +1,5 @@
 import logging
+import ssl
 from typing import List, Tuple
 from datetime import datetime
 import asyncpg
@@ -19,10 +20,16 @@ class Database:
     async def connect(self):
         """Create database connection pool"""
         try:
+            # Create SSL context for Neon/cloud databases
+            ssl_context = ssl.create_default_context()
+            ssl_context.check_hostname = False
+            ssl_context.verify_mode = ssl.CERT_NONE
+
             self.pool = await asyncpg.create_pool(
                 DATABASE_URL,
                 min_size=2,
                 max_size=10,
+                ssl=ssl_context,
             )
             logger.info("Database connection pool created")
         except Exception as e:
