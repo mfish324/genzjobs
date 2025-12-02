@@ -1,7 +1,11 @@
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 
-load_dotenv()
+# Load .env from parent directory (project root) for local development
+# In production (Railway), env vars are set directly
+env_path = Path(__file__).parent.parent / ".env"
+load_dotenv(env_path)
 
 # Database
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/genzjobs")
