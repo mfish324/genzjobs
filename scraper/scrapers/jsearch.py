@@ -72,7 +72,7 @@ class JSearchScraper(BaseScraper):
                         "query": query,
                         "page": "1",
                         "num_pages": "1",
-                        "date_posted": "week",  # Jobs from last week
+                        "date_posted": "month",  # Jobs from last 30 days
                     }
 
                     response = await client.get(
