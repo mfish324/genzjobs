@@ -17,7 +17,7 @@ API_PORT = int(os.getenv("API_PORT", "8000"))
 API_KEY = os.getenv("SCRAPER_API_KEY", "")
 
 # External API keys
-RAPIDAPI_KEY = os.getenv("RAPIDAPI_KEY", "")
+JSEARCH_API_KEY = os.getenv("JSEARCH_API_KEY", "")
 USAJOBS_API_KEY = os.getenv("USAJOBS_API_KEY", "")
 USAJOBS_EMAIL = os.getenv("USAJOBS_EMAIL", "")
 
@@ -34,8 +34,8 @@ JOB_SOURCES = {
         "type": "api",
     },
     "jsearch": {
-        "enabled": bool(RAPIDAPI_KEY),
-        "url": "https://jsearch.p.rapidapi.com/search",
+        "enabled": bool(JSEARCH_API_KEY),
+        "url": "https://api.openwebninja.com/jsearch/search",
         "type": "api",
     },
     "usajobs": {

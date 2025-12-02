@@ -5,28 +5,28 @@ from datetime import datetime
 
 from .base import BaseScraper
 from models import ScrapedJob, JobCategory
-from config import MAX_JOBS_PER_SOURCE, TECH_SKILLS, TRADES_SKILLS, PUBLIC_SAFETY_SKILLS, HEALTHCARE_SKILLS, RAPIDAPI_KEY
+from config import MAX_JOBS_PER_SOURCE, TECH_SKILLS, TRADES_SKILLS, PUBLIC_SAFETY_SKILLS, HEALTHCARE_SKILLS, JSEARCH_API_KEY
 
 logger = logging.getLogger(__name__)
 
 
 class JSearchScraper(BaseScraper):
-    """Scraper for JSearch API via RapidAPI - Google Jobs aggregator"""
+    """Scraper for JSearch API via OpenWebNinja - Google Jobs aggregator"""
 
     def __init__(self):
         super().__init__("jsearch")
-        self.api_url = "https://jsearch.p.rapidapi.com/search"
+        self.api_url = "https://api.openwebninja.com/jsearch/search"
         self.headers = {
-            "X-RapidAPI-Key": RAPIDAPI_KEY,
-            "X-RapidAPI-Host": "jsearch.p.rapidapi.com",
+            "x-api-key": JSEARCH_API_KEY,
+            "Accept": "application/json",
         }
 
     async def fetch_jobs(self) -> List[ScrapedJob]:
         """Fetch jobs from JSearch API"""
         jobs: List[ScrapedJob] = []
 
-        if not RAPIDAPI_KEY:
-            logger.warning("RAPIDAPI_KEY not set, skipping JSearch scraper")
+        if not JSEARCH_API_KEY:
+            logger.warning("JSEARCH_API_KEY not set, skipping JSearch scraper")
             return jobs
 
         # Search queries by category
