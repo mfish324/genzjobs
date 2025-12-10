@@ -18,6 +18,10 @@ import {
   Zap,
   ExternalLink,
   TrendingUp,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -374,11 +378,20 @@ function JobsContent() {
         </div>
       </div>
 
-      {/* Results count */}
+      {/* Results count and top pagination */}
       {pagination && (
-        <p className="text-sm text-muted-foreground mb-4">
-          Showing {jobs.length} of {pagination.total} jobs
-        </p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <p className="text-sm text-muted-foreground">
+            Showing {(page - 1) * 20 + 1}-{Math.min(page * 20, pagination.total)} of {pagination.total} jobs
+          </p>
+          {pagination.pages > 1 && (
+            <PaginationControls
+              page={page}
+              totalPages={pagination.pages}
+              onPageChange={setPage}
+            />
+          )}
+        </div>
       )}
 
       {/* Job listings */}
@@ -504,26 +517,124 @@ function JobsContent() {
 
       {/* Pagination */}
       {pagination && pagination.pages > 1 && (
-        <div className="flex justify-center gap-2 mt-8">
-          <Button
-            variant="outline"
-            disabled={page === 1}
-            onClick={() => setPage(page - 1)}
-          >
-            Previous
-          </Button>
-          <span className="flex items-center px-4">
-            Page {page} of {pagination.pages}
-          </span>
-          <Button
-            variant="outline"
-            disabled={page === pagination.pages}
-            onClick={() => setPage(page + 1)}
-          >
-            Next
-          </Button>
-        </div>
+        <PaginationControls
+          page={page}
+          totalPages={pagination.pages}
+          onPageChange={setPage}
+        />
       )}
+
+      {/* Build Number */}
+      <div className="text-center text-xs text-muted-foreground mt-8 pt-4 border-t">
+        Build v1.0.2 • GenZJobs
+      </div>
+    </div>
+  );
+}
+
+// Pagination component
+function PaginationControls({
+  page,
+  totalPages,
+  onPageChange
+}: {
+  page: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+}) {
+  // Generate page numbers to show
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = [];
+    const showPages = 5; // Max pages to show
+
+    if (totalPages <= showPages + 2) {
+      // Show all pages
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      // Always show first page
+      pages.push(1);
+
+      if (page > 3) pages.push('...');
+
+      // Show pages around current
+      const start = Math.max(2, page - 1);
+      const end = Math.min(totalPages - 1, page + 1);
+
+      for (let i = start; i <= end; i++) pages.push(i);
+
+      if (page < totalPages - 2) pages.push('...');
+
+      // Always show last page
+      pages.push(totalPages);
+    }
+
+    return pages;
+  };
+
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-1 mt-6">
+      {/* First page */}
+      <Button
+        variant="outline"
+        size="sm"
+        disabled={page === 1}
+        onClick={() => onPageChange(1)}
+        className="hidden sm:flex"
+      >
+        <ChevronsLeft className="w-4 h-4" />
+      </Button>
+
+      {/* Previous */}
+      <Button
+        variant="outline"
+        size="sm"
+        disabled={page === 1}
+        onClick={() => onPageChange(page - 1)}
+      >
+        <ChevronLeft className="w-4 h-4" />
+        <span className="hidden sm:inline ml-1">Prev</span>
+      </Button>
+
+      {/* Page numbers */}
+      <div className="flex items-center gap-1">
+        {getPageNumbers().map((p, i) => (
+          p === '...' ? (
+            <span key={`ellipsis-${i}`} className="px-2 text-muted-foreground">...</span>
+          ) : (
+            <Button
+              key={p}
+              variant={page === p ? "default" : "outline"}
+              size="sm"
+              onClick={() => onPageChange(p as number)}
+              className={page === p ? "bg-violet-500 hover:bg-violet-600" : ""}
+            >
+              {p}
+            </Button>
+          )
+        ))}
+      </div>
+
+      {/* Next */}
+      <Button
+        variant="outline"
+        size="sm"
+        disabled={page === totalPages}
+        onClick={() => onPageChange(page + 1)}
+      >
+        <span className="hidden sm:inline mr-1">Next</span>
+        <ChevronRight className="w-4 h-4" />
+      </Button>
+
+      {/* Last page */}
+      <Button
+        variant="outline"
+        size="sm"
+        disabled={page === totalPages}
+        onClick={() => onPageChange(totalPages)}
+        className="hidden sm:flex"
+      >
+        <ChevronsRight className="w-4 h-4" />
+      </Button>
     </div>
   );
 }
