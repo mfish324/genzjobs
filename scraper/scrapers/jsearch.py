@@ -1,3 +1,4 @@
+import asyncio
 import httpx
 import logging
 from typing import List, Optional
@@ -29,32 +30,80 @@ class JSearchScraper(BaseScraper):
             logger.warning("JSEARCH_API_KEY not set, skipping JSearch scraper")
             return jobs
 
-        # Search queries by category
+        # Search queries by category - expanded for more coverage
         search_configs = [
-            # Tech jobs
+            # Tech jobs - expanded
             {"query": "entry level software developer", "category": JobCategory.TECH},
             {"query": "junior developer", "category": JobCategory.TECH},
             {"query": "software engineer intern", "category": JobCategory.TECH},
             {"query": "junior data analyst", "category": JobCategory.TECH},
             {"query": "entry level web developer", "category": JobCategory.TECH},
-            # Trades jobs
+            {"query": "junior software engineer", "category": JobCategory.TECH},
+            {"query": "entry level programmer", "category": JobCategory.TECH},
+            {"query": "junior frontend developer", "category": JobCategory.TECH},
+            {"query": "junior backend developer", "category": JobCategory.TECH},
+            {"query": "entry level IT support", "category": JobCategory.TECH},
+            {"query": "junior DevOps engineer", "category": JobCategory.TECH},
+            {"query": "entry level QA tester", "category": JobCategory.TECH},
+            {"query": "junior python developer", "category": JobCategory.TECH},
+            {"query": "junior javascript developer", "category": JobCategory.TECH},
+            {"query": "entry level cybersecurity", "category": JobCategory.TECH},
+            {"query": "junior mobile developer", "category": JobCategory.TECH},
+            {"query": "entry level cloud engineer", "category": JobCategory.TECH},
+            {"query": "junior database administrator", "category": JobCategory.TECH},
+            {"query": "entry level network engineer", "category": JobCategory.TECH},
+            {"query": "junior UI UX designer", "category": JobCategory.TECH},
+            # Trades jobs - expanded
             {"query": "entry level electrician", "category": JobCategory.TRADES},
             {"query": "electrician apprentice", "category": JobCategory.TRADES},
             {"query": "entry level plumber", "category": JobCategory.TRADES},
+            {"query": "plumber apprentice", "category": JobCategory.TRADES},
             {"query": "hvac technician entry level", "category": JobCategory.TRADES},
+            {"query": "hvac apprentice", "category": JobCategory.TRADES},
             {"query": "welder apprentice", "category": JobCategory.TRADES},
+            {"query": "entry level welder", "category": JobCategory.TRADES},
             {"query": "carpenter apprentice", "category": JobCategory.TRADES},
+            {"query": "entry level carpenter", "category": JobCategory.TRADES},
             {"query": "construction laborer entry level", "category": JobCategory.TRADES},
-            # Public Safety jobs
+            {"query": "construction apprentice", "category": JobCategory.TRADES},
+            {"query": "entry level mechanic", "category": JobCategory.TRADES},
+            {"query": "automotive technician apprentice", "category": JobCategory.TRADES},
+            {"query": "entry level machinist", "category": JobCategory.TRADES},
+            {"query": "CNC operator entry level", "category": JobCategory.TRADES},
+            {"query": "sheet metal apprentice", "category": JobCategory.TRADES},
+            {"query": "pipefitter apprentice", "category": JobCategory.TRADES},
+            {"query": "entry level maintenance technician", "category": JobCategory.TRADES},
+            {"query": "diesel mechanic apprentice", "category": JobCategory.TRADES},
+            # Public Safety jobs - expanded
             {"query": "entry level police officer", "category": JobCategory.PUBLIC_SAFETY},
+            {"query": "police academy recruit", "category": JobCategory.PUBLIC_SAFETY},
             {"query": "firefighter trainee", "category": JobCategory.PUBLIC_SAFETY},
+            {"query": "entry level firefighter", "category": JobCategory.PUBLIC_SAFETY},
             {"query": "emt entry level", "category": JobCategory.PUBLIC_SAFETY},
+            {"query": "paramedic entry level", "category": JobCategory.PUBLIC_SAFETY},
             {"query": "security officer entry level", "category": JobCategory.PUBLIC_SAFETY},
+            {"query": "security guard entry level", "category": JobCategory.PUBLIC_SAFETY},
             {"query": "911 dispatcher", "category": JobCategory.PUBLIC_SAFETY},
-            # Healthcare jobs
+            {"query": "emergency dispatcher entry level", "category": JobCategory.PUBLIC_SAFETY},
+            {"query": "correctional officer entry level", "category": JobCategory.PUBLIC_SAFETY},
+            {"query": "park ranger entry level", "category": JobCategory.PUBLIC_SAFETY},
+            {"query": "TSA officer entry level", "category": JobCategory.PUBLIC_SAFETY},
+            {"query": "border patrol entry level", "category": JobCategory.PUBLIC_SAFETY},
+            # Healthcare jobs - expanded
             {"query": "cna entry level", "category": JobCategory.HEALTHCARE},
+            {"query": "certified nursing assistant", "category": JobCategory.HEALTHCARE},
             {"query": "medical assistant entry level", "category": JobCategory.HEALTHCARE},
             {"query": "phlebotomist entry level", "category": JobCategory.HEALTHCARE},
+            {"query": "patient care technician entry level", "category": JobCategory.HEALTHCARE},
+            {"query": "home health aide entry level", "category": JobCategory.HEALTHCARE},
+            {"query": "dental assistant entry level", "category": JobCategory.HEALTHCARE},
+            {"query": "pharmacy technician entry level", "category": JobCategory.HEALTHCARE},
+            {"query": "medical receptionist entry level", "category": JobCategory.HEALTHCARE},
+            {"query": "EMT basic entry level", "category": JobCategory.HEALTHCARE},
+            {"query": "surgical technician entry level", "category": JobCategory.HEALTHCARE},
+            {"query": "medical billing entry level", "category": JobCategory.HEALTHCARE},
+            {"query": "LPN entry level", "category": JobCategory.HEALTHCARE},
+            {"query": "caregiver entry level", "category": JobCategory.HEALTHCARE},
         ]
 
         try:
@@ -71,24 +120,43 @@ class JSearchScraper(BaseScraper):
                     params = {
                         "query": query,
                         "page": "1",
-                        "num_pages": "1",
+                        "num_pages": "3",  # Fetch 3 pages (~30 jobs per query)
                         "date_posted": "month",  # Jobs from last 30 days
                     }
 
-                    response = await client.get(
-                        self.api_url,
-                        headers=self.headers,
-                        params=params,
-                        timeout=30.0,
-                    )
+                    # Retry logic for transient errors
+                    max_retries = 3
+                    for attempt in range(max_retries):
+                        try:
+                            response = await client.get(
+                                self.api_url,
+                                headers=self.headers,
+                                params=params,
+                                timeout=30.0,
+                            )
 
-                    if response.status_code == 429:
-                        logger.warning("JSearch API rate limit reached")
-                        break
+                            if response.status_code == 429:
+                                logger.warning("JSearch API rate limit reached, waiting...")
+                                await asyncio.sleep(2)
+                                continue
 
-                    response.raise_for_status()
+                            if response.status_code >= 500:
+                                logger.warning(f"Server error {response.status_code} for '{query}', retry {attempt + 1}/{max_retries}")
+                                await asyncio.sleep(1)
+                                continue
+
+                            response.raise_for_status()
+                            break
+                        except httpx.HTTPError as e:
+                            if attempt == max_retries - 1:
+                                logger.warning(f"Failed after {max_retries} retries for '{query}': {e}")
+                                response = None
+                            await asyncio.sleep(1)
+
+                    if response is None or response.status_code != 200:
+                        continue  # Skip this query and move to next
+
                     data = response.json()
-
                     raw_jobs = data.get("data", [])
                     logger.info(f"JSearch query '{query}' returned {len(raw_jobs)} jobs")
 
@@ -104,9 +172,6 @@ class JSearchScraper(BaseScraper):
                             logger.warning(f"Failed to parse JSearch job: {e}")
                             continue
 
-        except httpx.HTTPError as e:
-            logger.error(f"HTTP error fetching from JSearch: {e}")
-            raise
         except Exception as e:
             logger.error(f"Error fetching from JSearch: {e}")
             raise
@@ -194,6 +259,9 @@ class JSearchScraper(BaseScraper):
                     else:
                         experience_level = "Lead"
 
+        # Get publisher (original job board)
+        publisher = raw_job.get("job_publisher", "")
+
         return ScrapedJob(
             external_id=f"jsearch_{job_id}",
             source="jsearch",
@@ -212,6 +280,7 @@ class JSearchScraper(BaseScraper):
             skills=skills,
             remote=is_remote,
             apply_url=raw_job.get("job_apply_link", ""),
+            publisher=publisher,
             posted_at=posted_at,
         )
 

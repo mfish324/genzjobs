@@ -50,6 +50,7 @@ class ScrapedJob(BaseModel):
     skills: List[str] = Field(default_factory=list)
     remote: bool = False
     apply_url: str
+    publisher: Optional[str] = None  # Original job board (LinkedIn, Indeed, etc.)
     posted_at: Optional[datetime] = None
     scraped_at: datetime = Field(default_factory=datetime.utcnow)
 

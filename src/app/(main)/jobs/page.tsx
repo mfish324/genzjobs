@@ -53,6 +53,7 @@ interface Job {
   remote: boolean;
   postedAt: string;
   applyUrl: string | null;
+  publisher: string | null;
   difficultyLevel: number;
 }
 
@@ -439,6 +440,11 @@ function JobsContent() {
                             {JOB_CATEGORIES.find(c => c.value === job.category)?.icon}{" "}
                             {JOB_CATEGORIES.find(c => c.value === job.category)?.label}
                           </Badge>
+                        )}
+                        {job.publisher && (
+                          <span className="text-xs text-muted-foreground">
+                            via {job.publisher}
+                          </span>
                         )}
                       </div>
 

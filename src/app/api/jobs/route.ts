@@ -77,6 +77,7 @@ export async function GET(req: NextRequest) {
           remote: true,
           postedAt: true,
           applyUrl: true,
+          publisher: true,
           difficultyLevel: true,
         },
       }),

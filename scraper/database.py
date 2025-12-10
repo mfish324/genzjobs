@@ -90,7 +90,8 @@ class Database:
                                 remote = $10,
                                 "applyUrl" = $11,
                                 "updatedAt" = $12,
-                                category = $14
+                                category = $14,
+                                publisher = $15
                             WHERE source = $1 AND "sourceId" = $13
                             ''',
                             job.source,
@@ -107,6 +108,7 @@ class Database:
                             datetime.utcnow(),
                             job.external_id,
                             job.category.value if hasattr(job.category, 'value') else str(job.category),
+                            job.publisher,
                         )
                         updated += 1
                     else:
@@ -117,12 +119,12 @@ class Database:
                                 id, "sourceId", source, title, company, "companyLogo",
                                 location, "jobType", "experienceLevel", category, description,
                                 "salaryMin", "salaryMax", "salaryCurrency", skills,
-                                remote, "applyUrl", "postedAt", "createdAt", "updatedAt"
+                                remote, "applyUrl", publisher, "postedAt", "createdAt", "updatedAt"
                             ) VALUES (
                                 gen_random_uuid(), $1, $2, $3, $4, $5,
                                 $6, $7, $8, $9, $10,
                                 $11, $12, $13, $14,
-                                $15, $16, $17, $18, $19
+                                $15, $16, $17, $18, $19, $20
                             )
                             ''',
                             job.external_id,
@@ -141,6 +143,7 @@ class Database:
                             job.skills,
                             job.remote,
                             job.apply_url,
+                            job.publisher,
                             job.posted_at or datetime.utcnow(),
                             datetime.utcnow(),
                             datetime.utcnow(),
