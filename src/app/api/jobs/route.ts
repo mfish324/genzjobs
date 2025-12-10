@@ -12,6 +12,7 @@ export async function GET(req: NextRequest) {
   const experienceLevel = searchParams.get("experienceLevel") || "";
   const category = searchParams.get("category") || "";
   const remote = searchParams.get("remote") === "true";
+  const usOnly = searchParams.get("usOnly") === "true";
   const skills = searchParams.get("skills")?.split(",").filter(Boolean) || [];
 
   const skip = (page - 1) * limit;
@@ -21,11 +22,29 @@ export async function GET(req: NextRequest) {
     isActive: true,
   };
 
+  // US only filter - show US jobs OR remote jobs from anywhere
+  if (usOnly) {
+    where.AND = [
+      ...(where.AND as unknown[] || []),
+      {
+        OR: [
+          { country: "US" },
+          { remote: true },
+        ],
+      },
+    ];
+  }
+
   if (search) {
-    where.OR = [
-      { title: { contains: search, mode: "insensitive" } },
-      { company: { contains: search, mode: "insensitive" } },
-      { description: { contains: search, mode: "insensitive" } },
+    where.AND = [
+      ...(where.AND as unknown[] || []),
+      {
+        OR: [
+          { title: { contains: search, mode: "insensitive" } },
+          { company: { contains: search, mode: "insensitive" } },
+          { description: { contains: search, mode: "insensitive" } },
+        ],
+      },
     ];
   }
 
@@ -75,6 +94,7 @@ export async function GET(req: NextRequest) {
           salaryPeriod: true,
           skills: true,
           remote: true,
+          country: true,
           postedAt: true,
           applyUrl: true,
           publisher: true,

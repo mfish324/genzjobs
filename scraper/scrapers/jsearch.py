@@ -122,6 +122,7 @@ class JSearchScraper(BaseScraper):
                         "page": "1",
                         "num_pages": "3",  # Fetch 3 pages (~30 jobs per query)
                         "date_posted": "month",  # Jobs from last 30 days
+                        "country": "us",  # Only US jobs
                     }
 
                     # Retry logic for transient errors
@@ -198,11 +199,13 @@ class JSearchScraper(BaseScraper):
 
         description = raw_job.get("job_description", "")
 
-        # Extract location
+        # Extract location and country
         city = raw_job.get("job_city", "")
         state = raw_job.get("job_state", "")
-        country = raw_job.get("job_country", "")
-        location_parts = [p for p in [city, state, country] if p]
+        country_name = raw_job.get("job_country", "")
+        # Map country name to ISO code
+        country_code = "US" if country_name.upper() in ["US", "USA", "UNITED STATES"] else country_name[:2].upper() if country_name else "US"
+        location_parts = [p for p in [city, state, country_name] if p]
         location = ", ".join(location_parts) if location_parts else "Unknown"
 
         # Check if remote
@@ -279,6 +282,7 @@ class JSearchScraper(BaseScraper):
             salary_period=salary_period,
             skills=skills,
             remote=is_remote,
+            country=country_code,
             apply_url=raw_job.get("job_apply_link", ""),
             publisher=publisher,
             posted_at=posted_at,

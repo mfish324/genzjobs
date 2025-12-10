@@ -49,6 +49,7 @@ class ScrapedJob(BaseModel):
     salary_period: Optional[str] = "yearly"
     skills: List[str] = Field(default_factory=list)
     remote: bool = False
+    country: Optional[str] = "US"  # ISO country code
     apply_url: str
     publisher: Optional[str] = None  # Original job board (LinkedIn, Indeed, etc.)
     posted_at: Optional[datetime] = None

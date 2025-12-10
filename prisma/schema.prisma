@@ -117,6 +117,7 @@ model JobListing {
   // Metadata
   skills          String[] @default([])
   remote          Boolean  @default(false)
+  country         String?  @default("US") // ISO country code
   applyUrl        String?
   companyWebsite  String?
 
