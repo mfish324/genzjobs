@@ -39,7 +39,20 @@ export default function ProfilePage() {
   const [isFetching, setIsFetching] = useState(true);
   const [newSkill, setNewSkill] = useState("");
   const [newLocation, setNewLocation] = useState("");
-  const [initialResume, setInitialResume] = useState<any>(null);
+  const [initialResume, setInitialResume] = useState<{
+    id: string;
+    fileName: string;
+    fileUrl: string;
+    fileSize: number;
+    skills: string[];
+    allowComparison: boolean;
+    comparisonOptInAt: string | null;
+    uniquenessScore: number | null;
+    similarCount90: number | null;
+    similarCount80: number | null;
+    lastAnalyzedAt: string | null;
+    uploadedAt: string;
+  } | null>(null);
   const [resumeLoading, setResumeLoading] = useState(true);
 
   const [profile, setProfile] = useState<ProfileData>({

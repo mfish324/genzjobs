@@ -1,4 +1,4 @@
-// @ts-ignore - pdf-parse has module issues
+// @ts-expect-error - pdf-parse has module issues with ESM
 import pdfParse from "pdf-parse";
 
 // Common tech skills to look for in resumes
