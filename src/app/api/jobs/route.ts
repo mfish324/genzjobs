@@ -14,6 +14,7 @@ export async function GET(req: NextRequest) {
   const remote = searchParams.get("remote") === "true";
   const usOnly = searchParams.get("usOnly") === "true";
   const skills = searchParams.get("skills")?.split(",").filter(Boolean) || [];
+  const employers = searchParams.get("employers")?.split(",").filter(Boolean) || [];
 
   const skip = (page - 1) * limit;
 
@@ -22,14 +23,16 @@ export async function GET(req: NextRequest) {
     isActive: true,
   };
 
-  // US only filter - show US jobs OR remote jobs from anywhere
+  // US only filter - show US jobs only (remote jobs must also be US-based or have no country)
   if (usOnly) {
     where.AND = [
       ...(where.AND as unknown[] || []),
       {
         OR: [
           { country: "US" },
-          { remote: true },
+          { country: null }, // Jobs with unknown country (might be US)
+          // Remote jobs from US or with unspecified country
+          { AND: [{ remote: true }, { country: { in: ["US", null] } }] },
         ],
       },
     ];
@@ -70,6 +73,10 @@ export async function GET(req: NextRequest) {
 
   if (skills.length > 0) {
     where.skills = { hasSome: skills };
+  }
+
+  if (employers.length > 0) {
+    where.company = { in: employers };
   }
 
   try {

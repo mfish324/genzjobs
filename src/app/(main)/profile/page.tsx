@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2, Save, User, Briefcase, MapPin, Star } from "lucide-react";
+import { Loader2, Save, User, Briefcase, MapPin, Star, FileText } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { EXPERIENCE_LEVELS, JOB_TYPES, COMMON_SKILLS } from "@/lib/constants";
+import { ResumeUpload } from "@/components/resume-upload";
 
 interface ProfileData {
   name: string;
@@ -38,6 +39,8 @@ export default function ProfilePage() {
   const [isFetching, setIsFetching] = useState(true);
   const [newSkill, setNewSkill] = useState("");
   const [newLocation, setNewLocation] = useState("");
+  const [initialResume, setInitialResume] = useState<any>(null);
+  const [resumeLoading, setResumeLoading] = useState(true);
 
   const [profile, setProfile] = useState<ProfileData>({
     name: "",
@@ -78,8 +81,23 @@ export default function ProfilePage() {
       }
     }
 
+    async function fetchResume() {
+      try {
+        const res = await fetch("/api/resume/upload");
+        if (res.ok) {
+          const data = await res.json();
+          setInitialResume(data.resume);
+        }
+      } catch {
+        console.error("Failed to load resume");
+      } finally {
+        setResumeLoading(false);
+      }
+    }
+
     if (session?.user) {
       fetchProfile();
+      fetchResume();
     }
   }, [session]);
 
@@ -388,6 +406,30 @@ export default function ProfilePage() {
           {isLoading ? "Saving..." : "Save Profile"}
         </Button>
       </form>
+
+      {/* Resume Section */}
+      <div className="mt-8">
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold mb-2 flex items-center gap-2">
+            <FileText className="w-6 h-6" />
+            Resume
+          </h2>
+          <p className="text-muted-foreground">
+            Upload your resume to get better job matches and see how unique you are!
+          </p>
+        </div>
+
+        {resumeLoading ? (
+          <div className="flex justify-center py-8">
+            <Loader2 className="w-8 h-8 animate-spin text-violet-500" />
+          </div>
+        ) : (
+          <ResumeUpload
+            initialResume={initialResume}
+            onUploadSuccess={(resume) => setInitialResume(resume)}
+          />
+        )}
+      </div>
     </div>
   );
 }

@@ -30,80 +30,48 @@ class JSearchScraper(BaseScraper):
             logger.warning("JSEARCH_API_KEY not set, skipping JSearch scraper")
             return jobs
 
-        # Search queries by category - expanded for more coverage
+        # Search queries by category - consolidated for API efficiency
+        # Reduced from 67 queries to 35, using broader terms that capture more jobs per query
         search_configs = [
-            # Tech jobs - expanded
+            # Tech jobs - consolidated (10 queries, down from 20)
             {"query": "entry level software developer", "category": JobCategory.TECH},
-            {"query": "junior developer", "category": JobCategory.TECH},
-            {"query": "software engineer intern", "category": JobCategory.TECH},
-            {"query": "junior data analyst", "category": JobCategory.TECH},
-            {"query": "entry level web developer", "category": JobCategory.TECH},
             {"query": "junior software engineer", "category": JobCategory.TECH},
-            {"query": "entry level programmer", "category": JobCategory.TECH},
-            {"query": "junior frontend developer", "category": JobCategory.TECH},
-            {"query": "junior backend developer", "category": JobCategory.TECH},
-            {"query": "entry level IT support", "category": JobCategory.TECH},
-            {"query": "junior DevOps engineer", "category": JobCategory.TECH},
+            {"query": "software engineer intern", "category": JobCategory.TECH},
+            {"query": "entry level data analyst", "category": JobCategory.TECH},
+            {"query": "junior web developer", "category": JobCategory.TECH},
+            {"query": "entry level IT support technician", "category": JobCategory.TECH},
+            {"query": "junior DevOps cloud engineer", "category": JobCategory.TECH},
             {"query": "entry level QA tester", "category": JobCategory.TECH},
-            {"query": "junior python developer", "category": JobCategory.TECH},
-            {"query": "junior javascript developer", "category": JobCategory.TECH},
-            {"query": "entry level cybersecurity", "category": JobCategory.TECH},
-            {"query": "junior mobile developer", "category": JobCategory.TECH},
-            {"query": "entry level cloud engineer", "category": JobCategory.TECH},
-            {"query": "junior database administrator", "category": JobCategory.TECH},
-            {"query": "entry level network engineer", "category": JobCategory.TECH},
-            {"query": "junior UI UX designer", "category": JobCategory.TECH},
-            # Trades jobs - expanded
-            {"query": "entry level electrician", "category": JobCategory.TRADES},
-            {"query": "electrician apprentice", "category": JobCategory.TRADES},
-            {"query": "entry level plumber", "category": JobCategory.TRADES},
-            {"query": "plumber apprentice", "category": JobCategory.TRADES},
-            {"query": "hvac technician entry level", "category": JobCategory.TRADES},
-            {"query": "hvac apprentice", "category": JobCategory.TRADES},
-            {"query": "welder apprentice", "category": JobCategory.TRADES},
-            {"query": "entry level welder", "category": JobCategory.TRADES},
-            {"query": "carpenter apprentice", "category": JobCategory.TRADES},
-            {"query": "entry level carpenter", "category": JobCategory.TRADES},
+            {"query": "junior cybersecurity analyst", "category": JobCategory.TECH},
+            {"query": "entry level UI UX designer", "category": JobCategory.TECH},
+            # Trades jobs - consolidated (10 queries, down from 20)
+            {"query": "electrician apprentice entry level", "category": JobCategory.TRADES},
+            {"query": "plumber apprentice entry level", "category": JobCategory.TRADES},
+            {"query": "hvac technician apprentice", "category": JobCategory.TRADES},
+            {"query": "welder apprentice entry level", "category": JobCategory.TRADES},
+            {"query": "carpenter apprentice entry level", "category": JobCategory.TRADES},
             {"query": "construction laborer entry level", "category": JobCategory.TRADES},
-            {"query": "construction apprentice", "category": JobCategory.TRADES},
-            {"query": "entry level mechanic", "category": JobCategory.TRADES},
-            {"query": "automotive technician apprentice", "category": JobCategory.TRADES},
-            {"query": "entry level machinist", "category": JobCategory.TRADES},
-            {"query": "CNC operator entry level", "category": JobCategory.TRADES},
-            {"query": "sheet metal apprentice", "category": JobCategory.TRADES},
-            {"query": "pipefitter apprentice", "category": JobCategory.TRADES},
-            {"query": "entry level maintenance technician", "category": JobCategory.TRADES},
-            {"query": "diesel mechanic apprentice", "category": JobCategory.TRADES},
-            # Public Safety jobs - expanded
-            {"query": "entry level police officer", "category": JobCategory.PUBLIC_SAFETY},
-            {"query": "police academy recruit", "category": JobCategory.PUBLIC_SAFETY},
-            {"query": "firefighter trainee", "category": JobCategory.PUBLIC_SAFETY},
-            {"query": "entry level firefighter", "category": JobCategory.PUBLIC_SAFETY},
-            {"query": "emt entry level", "category": JobCategory.PUBLIC_SAFETY},
-            {"query": "paramedic entry level", "category": JobCategory.PUBLIC_SAFETY},
-            {"query": "security officer entry level", "category": JobCategory.PUBLIC_SAFETY},
-            {"query": "security guard entry level", "category": JobCategory.PUBLIC_SAFETY},
-            {"query": "911 dispatcher", "category": JobCategory.PUBLIC_SAFETY},
-            {"query": "emergency dispatcher entry level", "category": JobCategory.PUBLIC_SAFETY},
+            {"query": "automotive mechanic apprentice", "category": JobCategory.TRADES},
+            {"query": "CNC machinist entry level", "category": JobCategory.TRADES},
+            {"query": "maintenance technician entry level", "category": JobCategory.TRADES},
+            {"query": "pipefitter sheet metal apprentice", "category": JobCategory.TRADES},
+            # Public Safety jobs - consolidated (7 queries, down from 14)
+            {"query": "police officer entry level recruit", "category": JobCategory.PUBLIC_SAFETY},
+            {"query": "firefighter trainee entry level", "category": JobCategory.PUBLIC_SAFETY},
+            {"query": "EMT paramedic entry level", "category": JobCategory.PUBLIC_SAFETY},
+            {"query": "security officer guard entry level", "category": JobCategory.PUBLIC_SAFETY},
+            {"query": "911 emergency dispatcher", "category": JobCategory.PUBLIC_SAFETY},
             {"query": "correctional officer entry level", "category": JobCategory.PUBLIC_SAFETY},
-            {"query": "park ranger entry level", "category": JobCategory.PUBLIC_SAFETY},
-            {"query": "TSA officer entry level", "category": JobCategory.PUBLIC_SAFETY},
-            {"query": "border patrol entry level", "category": JobCategory.PUBLIC_SAFETY},
-            # Healthcare jobs - expanded
-            {"query": "cna entry level", "category": JobCategory.HEALTHCARE},
-            {"query": "certified nursing assistant", "category": JobCategory.HEALTHCARE},
+            {"query": "TSA border patrol entry level", "category": JobCategory.PUBLIC_SAFETY},
+            # Healthcare jobs - consolidated (8 queries, down from 14)
+            {"query": "CNA certified nursing assistant", "category": JobCategory.HEALTHCARE},
             {"query": "medical assistant entry level", "category": JobCategory.HEALTHCARE},
             {"query": "phlebotomist entry level", "category": JobCategory.HEALTHCARE},
             {"query": "patient care technician entry level", "category": JobCategory.HEALTHCARE},
-            {"query": "home health aide entry level", "category": JobCategory.HEALTHCARE},
+            {"query": "home health aide caregiver", "category": JobCategory.HEALTHCARE},
             {"query": "dental assistant entry level", "category": JobCategory.HEALTHCARE},
             {"query": "pharmacy technician entry level", "category": JobCategory.HEALTHCARE},
-            {"query": "medical receptionist entry level", "category": JobCategory.HEALTHCARE},
-            {"query": "EMT basic entry level", "category": JobCategory.HEALTHCARE},
-            {"query": "surgical technician entry level", "category": JobCategory.HEALTHCARE},
-            {"query": "medical billing entry level", "category": JobCategory.HEALTHCARE},
-            {"query": "LPN entry level", "category": JobCategory.HEALTHCARE},
-            {"query": "caregiver entry level", "category": JobCategory.HEALTHCARE},
+            {"query": "medical billing receptionist entry level", "category": JobCategory.HEALTHCARE},
         ]
 
         try:
@@ -120,8 +88,8 @@ class JSearchScraper(BaseScraper):
                     params = {
                         "query": query,
                         "page": "1",
-                        "num_pages": "3",  # Fetch 3 pages (~30 jobs per query)
-                        "date_posted": "month",  # Jobs from last 30 days
+                        "num_pages": "1",  # Reduced from 3 to 1 page (~10 jobs per query) to save API calls
+                        "date_posted": "week",  # Jobs from last 7 days - fresher results, less duplication
                         "country": "us",  # Only US jobs
                     }
 
@@ -203,8 +171,43 @@ class JSearchScraper(BaseScraper):
         city = raw_job.get("job_city", "")
         state = raw_job.get("job_state", "")
         country_name = raw_job.get("job_country", "")
-        # Map country name to ISO code
-        country_code = "US" if country_name.upper() in ["US", "USA", "UNITED STATES"] else country_name[:2].upper() if country_name else "US"
+
+        # Map country name to ISO code - be strict about US detection
+        country_upper = country_name.upper().strip() if country_name else ""
+        if country_upper in ["US", "USA", "UNITED STATES", "UNITED STATES OF AMERICA"]:
+            country_code = "US"
+        elif country_upper in ["DE", "GERMANY", "DEUTSCHLAND"]:
+            country_code = "DE"
+        elif country_upper in ["GB", "UK", "UNITED KINGDOM", "ENGLAND"]:
+            country_code = "GB"
+        elif country_upper in ["CA", "CANADA"]:
+            country_code = "CA"
+        elif country_upper in ["IN", "INDIA"]:
+            country_code = "IN"
+        elif country_upper in ["AU", "AUSTRALIA"]:
+            country_code = "AU"
+        elif country_upper in ["FR", "FRANCE"]:
+            country_code = "FR"
+        elif country_upper in ["NL", "NETHERLANDS", "HOLLAND"]:
+            country_code = "NL"
+        elif len(country_upper) == 2:
+            country_code = country_upper
+        elif country_name:
+            # Unknown country - don't default to US
+            country_code = country_name[:2].upper()
+        else:
+            # No country specified - check if US state code exists
+            if state and len(state) == 2 and state.upper() in [
+                "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA",
+                "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD",
+                "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ",
+                "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC",
+                "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY", "DC"
+            ]:
+                country_code = "US"
+            else:
+                country_code = None  # Unknown - will be filtered out by US-only filter
+
         location_parts = [p for p in [city, state, country_name] if p]
         location = ", ".join(location_parts) if location_parts else "Unknown"
 

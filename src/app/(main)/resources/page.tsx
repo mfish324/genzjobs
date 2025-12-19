@@ -201,12 +201,12 @@ export default function ResourcesPage() {
           <Filter className="w-4 h-4 text-muted-foreground" />
           <span className="text-sm text-muted-foreground">Category:</span>
         </div>
-        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+        <Select value={categoryFilter || "all"} onValueChange={(val) => setCategoryFilter(val === "all" ? "" : val)}>
           <SelectTrigger className="w-48">
             <SelectValue placeholder="All categories" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All categories</SelectItem>
+            <SelectItem value="all">All categories</SelectItem>
             {RESOURCE_CATEGORIES.map((cat) => (
               <SelectItem key={cat.value} value={cat.value}>
                 {cat.label}

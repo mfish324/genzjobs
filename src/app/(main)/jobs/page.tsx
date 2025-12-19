@@ -22,6 +22,8 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  PanelLeftClose,
+  PanelLeft,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -43,6 +45,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { EXPERIENCE_LEVELS, JOB_TYPES, JOB_CATEGORIES, XP_REWARDS } from "@/lib/constants";
+import { EmployerFacets } from "@/components/employer-facets";
 
 interface Job {
   id: string;
@@ -80,6 +83,7 @@ function JobsContent() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   // Filter states
   const [search, setSearch] = useState(searchParams.get("search") || "");
@@ -92,6 +96,7 @@ function JobsContent() {
   const [remote, setRemote] = useState(searchParams.get("remote") === "true");
   const [usOnly, setUsOnly] = useState(searchParams.get("usOnly") !== "false"); // Default to true
   const [page, setPage] = useState(parseInt(searchParams.get("page") || "1"));
+  const [selectedEmployers, setSelectedEmployers] = useState<string[]>([]);
 
   const fetchJobs = useCallback(async () => {
     setIsLoading(true);
@@ -104,6 +109,7 @@ function JobsContent() {
       if (category && category !== "all") params.set("category", category);
       if (remote) params.set("remote", "true");
       if (usOnly) params.set("usOnly", "true");
+      if (selectedEmployers.length > 0) params.set("employers", selectedEmployers.join(","));
       params.set("page", page.toString());
 
       const res = await fetch(`/api/jobs?${params.toString()}`);
@@ -124,7 +130,7 @@ function JobsContent() {
     } finally {
       setIsLoading(false);
     }
-  }, [search, location, jobType, experienceLevel, category, remote, usOnly, page]);
+  }, [search, location, jobType, experienceLevel, category, remote, usOnly, selectedEmployers, page]);
 
   useEffect(() => {
     fetchJobs();
@@ -143,6 +149,12 @@ function JobsContent() {
     setCategory("all");
     setRemote(false);
     setUsOnly(true);
+    setSelectedEmployers([]);
+    setPage(1);
+  };
+
+  const handleEmployersChange = (employers: string[]) => {
+    setSelectedEmployers(employers);
     setPage(1);
   };
 
@@ -175,6 +187,17 @@ function JobsContent() {
     if (diffInDays < 7) return `${diffInDays} days ago`;
     if (diffInDays < 30) return `${Math.floor(diffInDays / 7)} weeks ago`;
     return `${Math.floor(diffInDays / 30)} months ago`;
+  };
+
+  // Facets search params (without employers to avoid circular filtering)
+  const facetsSearchParams = {
+    search,
+    location,
+    jobType: jobType !== "all" ? jobType : undefined,
+    experienceLevel: experienceLevel !== "all" ? experienceLevel : undefined,
+    category: category !== "all" ? category : undefined,
+    remote,
+    usOnly,
   };
 
   return (
@@ -312,6 +335,16 @@ function JobsContent() {
                   />
                   <label htmlFor="us-only-mobile">US jobs only</label>
                 </div>
+
+                {/* Mobile Employer Facets */}
+                <div className="border-t pt-4">
+                  <EmployerFacets
+                    searchParams={facetsSearchParams}
+                    selectedEmployers={selectedEmployers}
+                    onEmployersChange={handleEmployersChange}
+                  />
+                </div>
+
                 <Button onClick={clearFilters} variant="outline" className="w-full">
                   Clear Filters
                 </Button>
@@ -370,7 +403,7 @@ function JobsContent() {
             US Only
           </Button>
 
-          {(search || location || jobType !== "all" || experienceLevel !== "all" || category !== "all" || remote || !usOnly) && (
+          {(search || location || jobType !== "all" || experienceLevel !== "all" || category !== "all" || remote || !usOnly || selectedEmployers.length > 0) && (
             <Button variant="ghost" size="sm" onClick={clearFilters}>
               Clear filters
             </Button>
@@ -378,155 +411,202 @@ function JobsContent() {
         </div>
       </div>
 
-      {/* Results count and top pagination */}
-      {pagination && (
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-          <p className="text-sm text-muted-foreground">
-            Showing {(page - 1) * 20 + 1}-{Math.min(page * 20, pagination.total)} of {pagination.total} jobs
-          </p>
-          {pagination.pages > 1 && (
+      {/* Main content area with sidebar */}
+      <div className="flex gap-6">
+        {/* Sidebar - Desktop only */}
+        <aside className={`hidden lg:block transition-all duration-300 ${sidebarOpen ? 'w-64 min-w-64' : 'w-0 min-w-0 overflow-hidden'}`}>
+          <div className="sticky top-4">
+            <div className="bg-card border rounded-lg p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-semibold text-sm">Refine Results</h2>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSidebarOpen(false)}
+                  className="h-6 w-6 p-0"
+                >
+                  <PanelLeftClose className="h-4 w-4" />
+                </Button>
+              </div>
+              <EmployerFacets
+                searchParams={facetsSearchParams}
+                selectedEmployers={selectedEmployers}
+                onEmployersChange={handleEmployersChange}
+              />
+            </div>
+          </div>
+        </aside>
+
+        {/* Toggle sidebar button when closed */}
+        {!sidebarOpen && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setSidebarOpen(true)}
+            className="hidden lg:flex fixed left-4 top-1/2 -translate-y-1/2 z-10"
+          >
+            <PanelLeft className="h-4 w-4" />
+          </Button>
+        )}
+
+        {/* Main content */}
+        <div className="flex-1 min-w-0">
+          {/* Results count and top pagination */}
+          {pagination && (
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+              <p className="text-sm text-muted-foreground">
+                Showing {(page - 1) * 20 + 1}-{Math.min(page * 20, pagination.total)} of {pagination.total} jobs
+                {selectedEmployers.length > 0 && (
+                  <span className="ml-2 text-violet-600">
+                    (filtered by {selectedEmployers.length} employer{selectedEmployers.length > 1 ? 's' : ''})
+                  </span>
+                )}
+              </p>
+              {pagination.pages > 1 && (
+                <PaginationControls
+                  page={page}
+                  totalPages={pagination.pages}
+                  onPageChange={setPage}
+                />
+              )}
+            </div>
+          )}
+
+          {/* Job listings */}
+          {isLoading ? (
+            <div className="flex justify-center items-center py-20">
+              <Loader2 className="w-8 h-8 animate-spin text-violet-500" />
+            </div>
+          ) : jobs.length === 0 ? (
+            <div className="text-center py-20">
+              <Briefcase className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No jobs found</h3>
+              <p className="text-muted-foreground mb-4">
+                Try adjusting your search or filters
+              </p>
+              <Button onClick={clearFilters} variant="outline">
+                Clear all filters
+              </Button>
+            </div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {jobs.map((job, index) => (
+                <Link key={job.id} href={`/jobs/${job.id}`}>
+                  <Card className="group h-full hover:shadow-lg hover:border-violet-300 transition-all duration-300 cursor-pointer overflow-hidden relative">
+                    {/* Gradient accent bar */}
+                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-violet-500 via-fuchsia-500 to-pink-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+
+                    <CardContent className="p-5">
+                      {/* Header with logo and XP badge */}
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-violet-100 to-fuchsia-100 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                          {job.companyLogo ? (
+                            <img
+                              src={job.companyLogo}
+                              alt={job.company}
+                              className="w-8 h-8 rounded object-contain"
+                            />
+                          ) : (
+                            <Building2 className="w-5 h-5 text-violet-500" />
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {job.remote && (
+                            <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-xs">
+                              <Wifi className="w-3 h-3 mr-1" />
+                              Remote
+                            </Badge>
+                          )}
+                          <Badge className="bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white border-0 text-xs">
+                            <Zap className="w-3 h-3 mr-1" />
+                            +{XP_REWARDS.JOB_APPLICATION} XP
+                          </Badge>
+                        </div>
+                      </div>
+
+                      {/* Title and company */}
+                      <h3 className="font-semibold text-lg mb-1 line-clamp-2 group-hover:text-violet-600 transition-colors">
+                        {job.title}
+                      </h3>
+                      <p className="text-muted-foreground text-sm mb-3">{job.company}</p>
+
+                      {/* Key details */}
+                      <div className="space-y-2 mb-4">
+                        {job.location && (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <MapPin className="w-4 h-4 text-violet-400" />
+                            <span className="truncate">{job.location}</span>
+                          </div>
+                        )}
+                        {formatSalary(job) && (
+                          <div className="flex items-center gap-2 text-sm font-medium text-emerald-600">
+                            <DollarSign className="w-4 h-4" />
+                            <span>{formatSalary(job)}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Skills */}
+                      {job.skills.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mb-4">
+                          {job.skills.slice(0, 3).map((skill) => (
+                            <Badge key={skill} variant="outline" className="text-xs bg-slate-50">
+                              {skill}
+                            </Badge>
+                          ))}
+                          {job.skills.length > 3 && (
+                            <Badge variant="outline" className="text-xs bg-slate-50">
+                              +{job.skills.length - 3}
+                            </Badge>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Footer with metadata */}
+                      <div className="flex items-center justify-between pt-3 border-t text-xs text-muted-foreground">
+                        <div className="flex items-center gap-3">
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {timeAgo(job.postedAt)}
+                          </span>
+                          {job.category && job.category !== "tech" && (
+                            <span className="flex items-center gap-1">
+                              {JOB_CATEGORIES.find(c => c.value === job.category)?.icon}
+                            </span>
+                          )}
+                        </div>
+                        {job.publisher && (
+                          <span className="text-xs opacity-60">via {job.publisher}</span>
+                        )}
+                      </div>
+
+                      {/* Hover action hint */}
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-violet-500/10 to-transparent h-16 opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-2">
+                        <span className="text-xs text-violet-600 font-medium flex items-center gap-1">
+                          View Details <ExternalLink className="w-3 h-3" />
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          )}
+
+          {/* Pagination */}
+          {pagination && pagination.pages > 1 && (
             <PaginationControls
               page={page}
               totalPages={pagination.pages}
               onPageChange={setPage}
             />
           )}
+
+          {/* Build Number */}
+          <div className="text-center text-xs text-muted-foreground mt-8 pt-4 border-t">
+            Build v1.0.3 • GenZJobs
+          </div>
         </div>
-      )}
-
-      {/* Job listings */}
-      {isLoading ? (
-        <div className="flex justify-center items-center py-20">
-          <Loader2 className="w-8 h-8 animate-spin text-violet-500" />
-        </div>
-      ) : jobs.length === 0 ? (
-        <div className="text-center py-20">
-          <Briefcase className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" />
-          <h3 className="text-lg font-semibold mb-2">No jobs found</h3>
-          <p className="text-muted-foreground mb-4">
-            Try adjusting your search or filters
-          </p>
-          <Button onClick={clearFilters} variant="outline">
-            Clear all filters
-          </Button>
-        </div>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {jobs.map((job, index) => (
-            <Link key={job.id} href={`/jobs/${job.id}`}>
-              <Card className="group h-full hover:shadow-lg hover:border-violet-300 transition-all duration-300 cursor-pointer overflow-hidden relative">
-                {/* Gradient accent bar */}
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-violet-500 via-fuchsia-500 to-pink-500 opacity-0 group-hover:opacity-100 transition-opacity" />
-
-                <CardContent className="p-5">
-                  {/* Header with logo and XP badge */}
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-violet-100 to-fuchsia-100 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                      {job.companyLogo ? (
-                        <img
-                          src={job.companyLogo}
-                          alt={job.company}
-                          className="w-8 h-8 rounded object-contain"
-                        />
-                      ) : (
-                        <Building2 className="w-5 h-5 text-violet-500" />
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {job.remote && (
-                        <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-xs">
-                          <Wifi className="w-3 h-3 mr-1" />
-                          Remote
-                        </Badge>
-                      )}
-                      <Badge className="bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white border-0 text-xs">
-                        <Zap className="w-3 h-3 mr-1" />
-                        +{XP_REWARDS.JOB_APPLICATION} XP
-                      </Badge>
-                    </div>
-                  </div>
-
-                  {/* Title and company */}
-                  <h3 className="font-semibold text-lg mb-1 line-clamp-2 group-hover:text-violet-600 transition-colors">
-                    {job.title}
-                  </h3>
-                  <p className="text-muted-foreground text-sm mb-3">{job.company}</p>
-
-                  {/* Key details */}
-                  <div className="space-y-2 mb-4">
-                    {job.location && (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <MapPin className="w-4 h-4 text-violet-400" />
-                        <span className="truncate">{job.location}</span>
-                      </div>
-                    )}
-                    {formatSalary(job) && (
-                      <div className="flex items-center gap-2 text-sm font-medium text-emerald-600">
-                        <DollarSign className="w-4 h-4" />
-                        <span>{formatSalary(job)}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Skills */}
-                  {job.skills.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mb-4">
-                      {job.skills.slice(0, 3).map((skill) => (
-                        <Badge key={skill} variant="outline" className="text-xs bg-slate-50">
-                          {skill}
-                        </Badge>
-                      ))}
-                      {job.skills.length > 3 && (
-                        <Badge variant="outline" className="text-xs bg-slate-50">
-                          +{job.skills.length - 3}
-                        </Badge>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Footer with metadata */}
-                  <div className="flex items-center justify-between pt-3 border-t text-xs text-muted-foreground">
-                    <div className="flex items-center gap-3">
-                      <span className="flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {timeAgo(job.postedAt)}
-                      </span>
-                      {job.category && job.category !== "tech" && (
-                        <span className="flex items-center gap-1">
-                          {JOB_CATEGORIES.find(c => c.value === job.category)?.icon}
-                        </span>
-                      )}
-                    </div>
-                    {job.publisher && (
-                      <span className="text-xs opacity-60">via {job.publisher}</span>
-                    )}
-                  </div>
-
-                  {/* Hover action hint */}
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-violet-500/10 to-transparent h-16 opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-2">
-                    <span className="text-xs text-violet-600 font-medium flex items-center gap-1">
-                      View Details <ExternalLink className="w-3 h-3" />
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-        </div>
-      )}
-
-      {/* Pagination */}
-      {pagination && pagination.pages > 1 && (
-        <PaginationControls
-          page={page}
-          totalPages={pagination.pages}
-          onPageChange={setPage}
-        />
-      )}
-
-      {/* Build Number */}
-      <div className="text-center text-xs text-muted-foreground mt-8 pt-4 border-t">
-        Build v1.0.2 • GenZJobs
       </div>
     </div>
   );

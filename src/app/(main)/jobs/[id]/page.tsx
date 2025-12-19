@@ -20,12 +20,16 @@ import {
   Users,
   TrendingUp,
   BookOpen,
+  Sparkles,
+  ChevronRight,
+  Zap,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import { JOB_TYPES, EXPERIENCE_LEVELS, XP_REWARDS } from "@/lib/constants";
 
 interface JobDetails {
@@ -53,6 +57,23 @@ interface JobDetails {
   applicationsCount: number;
 }
 
+interface SimilarJob {
+  id: string;
+  title: string;
+  company: string;
+  companyLogo: string | null;
+  location: string | null;
+  remote: boolean;
+  salaryMin: number | null;
+  salaryMax: number | null;
+  salaryCurrency: string | null;
+  salaryPeriod: string | null;
+  skills: string[];
+  postedAt: string;
+  similarityScore: number;
+  matchReasons: string[];
+}
+
 export default function JobDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { data: session } = useSession();
@@ -60,6 +81,9 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
   const [job, setJob] = useState<JobDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isApplying, setIsApplying] = useState(false);
+  const [similarJobs, setSimilarJobs] = useState<SimilarJob[]>([]);
+  const [totalSimilar, setTotalSimilar] = useState(0);
+  const [similarLoading, setSimilarLoading] = useState(true);
 
   useEffect(() => {
     async function fetchJob() {
@@ -81,6 +105,29 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
 
     fetchJob();
   }, [id, router]);
+
+  // Fetch similar jobs
+  useEffect(() => {
+    async function fetchSimilarJobs() {
+      setSimilarLoading(true);
+      try {
+        const res = await fetch(`/api/jobs/${id}/similar?limit=4`);
+        if (res.ok) {
+          const data = await res.json();
+          setSimilarJobs(data.similarJobs || []);
+          setTotalSimilar(data.totalSimilar || 0);
+        }
+      } catch (error) {
+        console.error("Failed to load similar jobs:", error);
+      } finally {
+        setSimilarLoading(false);
+      }
+    }
+
+    if (id) {
+      fetchSimilarJobs();
+    }
+  }, [id]);
 
   const handleApply = async () => {
     if (!session) {
@@ -118,23 +165,24 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
     }
   };
 
-  const formatSalary = () => {
-    if (!job?.salaryMin && !job?.salaryMax) return null;
-    const currency = job.salaryCurrency || "USD";
-    const period = job.salaryPeriod || "yearly";
+  const formatSalary = (salaryJob?: { salaryMin: number | null; salaryMax: number | null; salaryCurrency: string | null; salaryPeriod: string | null }) => {
+    const j = salaryJob || job;
+    if (!j?.salaryMin && !j?.salaryMax) return null;
+    const currency = j.salaryCurrency || "USD";
+    const period = j.salaryPeriod || "yearly";
     const formatter = new Intl.NumberFormat("en-US", {
       style: "currency",
       currency,
       maximumFractionDigits: 0,
     });
 
-    if (job.salaryMin && job.salaryMax) {
-      return `${formatter.format(job.salaryMin)} - ${formatter.format(job.salaryMax)}/${period === "yearly" ? "yr" : "hr"}`;
+    if (j.salaryMin && j.salaryMax) {
+      return `${formatter.format(j.salaryMin)} - ${formatter.format(j.salaryMax)}/${period === "yearly" ? "yr" : "hr"}`;
     }
-    if (job.salaryMin) {
-      return `${formatter.format(job.salaryMin)}+/${period === "yearly" ? "yr" : "hr"}`;
+    if (j.salaryMin) {
+      return `${formatter.format(j.salaryMin)}+/${period === "yearly" ? "yr" : "hr"}`;
     }
-    return `Up to ${formatter.format(job.salaryMax!)}/${period === "yearly" ? "yr" : "hr"}`;
+    return `Up to ${formatter.format(j.salaryMax!)}/${period === "yearly" ? "yr" : "hr"}`;
   };
 
   const timeAgo = (dateStr: string) => {
@@ -290,6 +338,99 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
               </CardContent>
             </Card>
           )}
+
+          {/* Similar Jobs Section */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-violet-500" />
+                  Similar Jobs
+                  {totalSimilar > 0 && (
+                    <Badge variant="secondary" className="ml-2">
+                      {totalSimilar} found
+                    </Badge>
+                  )}
+                </CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {similarLoading ? (
+                <div className="grid gap-4 md:grid-cols-2">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="p-4 border rounded-lg">
+                      <div className="flex items-start gap-3">
+                        <Skeleton className="w-10 h-10 rounded-lg" />
+                        <div className="flex-1 space-y-2">
+                          <Skeleton className="h-4 w-3/4" />
+                          <Skeleton className="h-3 w-1/2" />
+                          <Skeleton className="h-3 w-1/3" />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : similarJobs.length > 0 ? (
+                <div className="grid gap-4 md:grid-cols-2">
+                  {similarJobs.map((similarJob) => (
+                    <Link key={similarJob.id} href={`/jobs/${similarJob.id}`}>
+                      <div className="group p-4 border rounded-lg hover:border-violet-300 hover:shadow-md transition-all cursor-pointer">
+                        <div className="flex items-start gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-100 to-fuchsia-100 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                            {similarJob.companyLogo ? (
+                              <img
+                                src={similarJob.companyLogo}
+                                alt={similarJob.company}
+                                className="w-6 h-6 rounded object-contain"
+                              />
+                            ) : (
+                              <Building2 className="w-4 h-4 text-violet-500" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h4 className="font-medium text-sm truncate group-hover:text-violet-600 transition-colors">
+                                {similarJob.title}
+                              </h4>
+                              <Badge className="bg-violet-100 text-violet-700 text-xs shrink-0">
+                                {similarJob.similarityScore}% match
+                              </Badge>
+                            </div>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {similarJob.company}
+                            </p>
+                            <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                              {similarJob.location && (
+                                <span className="flex items-center gap-1 truncate">
+                                  <MapPin className="w-3 h-3" />
+                                  {similarJob.location}
+                                </span>
+                              )}
+                              {similarJob.remote && (
+                                <Badge variant="outline" className="text-xs py-0 px-1">
+                                  Remote
+                                </Badge>
+                              )}
+                            </div>
+                            {similarJob.matchReasons.length > 0 && (
+                              <p className="text-xs text-violet-600 mt-2 truncate">
+                                {similarJob.matchReasons[0]}
+                              </p>
+                            )}
+                          </div>
+                          <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-violet-500 transition-colors shrink-0" />
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No similar jobs found at this time
+                </p>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
         {/* Sidebar */}
@@ -369,6 +510,16 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                     <p className="text-xs text-muted-foreground">Applicants</p>
                   </div>
                 </div>
+
+                {totalSimilar > 0 && (
+                  <div className="flex items-center gap-3">
+                    <Sparkles className="w-5 h-5 text-muted-foreground" />
+                    <div>
+                      <p className="text-sm font-medium">{totalSimilar} similar</p>
+                      <p className="text-xs text-muted-foreground">Related jobs</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
