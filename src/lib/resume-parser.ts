@@ -1,5 +1,6 @@
-// @ts-expect-error - pdf-parse has module issues with ESM
-import pdfParse from "pdf-parse";
+import * as pdfParseModule from "pdf-parse";
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const pdfParse = (pdfParseModule as any).default || pdfParseModule;
 
 // Common tech skills to look for in resumes
 const COMMON_SKILLS = [
