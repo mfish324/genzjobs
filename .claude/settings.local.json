@@ -8,7 +8,17 @@
       "Bash(npx prisma init)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git push)"
+      "Bash(git push)",
+      "Bash(npx prisma db push:*)",
+      "Bash(npx prisma generate:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx ts-node:*)",
+      "Bash(node:*)",
+      "Bash(python:*)",
+      "Bash(cat:*)",
+      "Bash(BashOutput -r \"embedding|vector|similarity|rag|semantic\" 4769c0)",
+      "Bash(npm audit:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []
