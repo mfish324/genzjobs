@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
     isActive: true,
   };
 
-  // US only filter - show US jobs only (remote jobs must also be US-based or have no country)
+  // US only filter - show US jobs only
   if (usOnly) {
     where.AND = [
       ...(where.AND as unknown[] || []),
@@ -31,8 +31,6 @@ export async function GET(req: NextRequest) {
         OR: [
           { country: "US" },
           { country: null }, // Jobs with unknown country (might be US)
-          // Remote jobs from US or with unspecified country
-          { AND: [{ remote: true }, { country: { in: ["US", null] } }] },
         ],
       },
     ];
