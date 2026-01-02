@@ -30,48 +30,30 @@ class JSearchScraper(BaseScraper):
             logger.warning("JSEARCH_API_KEY not set, skipping JSearch scraper")
             return jobs
 
-        # Search queries by category - consolidated for API efficiency
-        # Reduced from 67 queries to 35, using broader terms that capture more jobs per query
+        # Search queries by category - AGGRESSIVE consolidation for API cost reduction
+        # Reduced to 16 queries total (down from 35, originally 67)
+        # Each query is broader to capture more jobs per API call
         search_configs = [
-            # Tech jobs - consolidated (10 queries, down from 20)
-            {"query": "entry level software developer", "category": JobCategory.TECH},
-            {"query": "junior software engineer", "category": JobCategory.TECH},
-            {"query": "software engineer intern", "category": JobCategory.TECH},
-            {"query": "entry level data analyst", "category": JobCategory.TECH},
-            {"query": "junior web developer", "category": JobCategory.TECH},
-            {"query": "entry level IT support technician", "category": JobCategory.TECH},
-            {"query": "junior DevOps cloud engineer", "category": JobCategory.TECH},
-            {"query": "entry level QA tester", "category": JobCategory.TECH},
-            {"query": "junior cybersecurity analyst", "category": JobCategory.TECH},
-            {"query": "entry level UI UX designer", "category": JobCategory.TECH},
-            # Trades jobs - consolidated (10 queries, down from 20)
-            {"query": "electrician apprentice entry level", "category": JobCategory.TRADES},
-            {"query": "plumber apprentice entry level", "category": JobCategory.TRADES},
-            {"query": "hvac technician apprentice", "category": JobCategory.TRADES},
-            {"query": "welder apprentice entry level", "category": JobCategory.TRADES},
-            {"query": "carpenter apprentice entry level", "category": JobCategory.TRADES},
-            {"query": "construction laborer entry level", "category": JobCategory.TRADES},
-            {"query": "automotive mechanic apprentice", "category": JobCategory.TRADES},
-            {"query": "CNC machinist entry level", "category": JobCategory.TRADES},
-            {"query": "maintenance technician entry level", "category": JobCategory.TRADES},
-            {"query": "pipefitter sheet metal apprentice", "category": JobCategory.TRADES},
-            # Public Safety jobs - consolidated (7 queries, down from 14)
-            {"query": "police officer entry level recruit", "category": JobCategory.PUBLIC_SAFETY},
-            {"query": "firefighter trainee entry level", "category": JobCategory.PUBLIC_SAFETY},
-            {"query": "EMT paramedic entry level", "category": JobCategory.PUBLIC_SAFETY},
-            {"query": "security officer guard entry level", "category": JobCategory.PUBLIC_SAFETY},
-            {"query": "911 emergency dispatcher", "category": JobCategory.PUBLIC_SAFETY},
-            {"query": "correctional officer entry level", "category": JobCategory.PUBLIC_SAFETY},
-            {"query": "TSA border patrol entry level", "category": JobCategory.PUBLIC_SAFETY},
-            # Healthcare jobs - consolidated (8 queries, down from 14)
-            {"query": "CNA certified nursing assistant", "category": JobCategory.HEALTHCARE},
-            {"query": "medical assistant entry level", "category": JobCategory.HEALTHCARE},
-            {"query": "phlebotomist entry level", "category": JobCategory.HEALTHCARE},
-            {"query": "patient care technician entry level", "category": JobCategory.HEALTHCARE},
-            {"query": "home health aide caregiver", "category": JobCategory.HEALTHCARE},
-            {"query": "dental assistant entry level", "category": JobCategory.HEALTHCARE},
-            {"query": "pharmacy technician entry level", "category": JobCategory.HEALTHCARE},
-            {"query": "medical billing receptionist entry level", "category": JobCategory.HEALTHCARE},
+            # Tech jobs - 5 broad queries
+            {"query": "entry level software developer engineer", "category": JobCategory.TECH},
+            {"query": "junior developer intern", "category": JobCategory.TECH},
+            {"query": "entry level data analyst IT support", "category": JobCategory.TECH},
+            {"query": "junior web developer frontend backend", "category": JobCategory.TECH},
+            {"query": "entry level cybersecurity DevOps QA", "category": JobCategory.TECH},
+            # Trades jobs - 4 broad queries
+            {"query": "apprentice electrician plumber HVAC", "category": JobCategory.TRADES},
+            {"query": "entry level welder carpenter construction", "category": JobCategory.TRADES},
+            {"query": "apprentice mechanic technician maintenance", "category": JobCategory.TRADES},
+            {"query": "entry level machinist pipefitter trades", "category": JobCategory.TRADES},
+            # Public Safety jobs - 3 broad queries
+            {"query": "entry level police officer firefighter EMT", "category": JobCategory.PUBLIC_SAFETY},
+            {"query": "security officer guard dispatcher", "category": JobCategory.PUBLIC_SAFETY},
+            {"query": "entry level correctional officer TSA", "category": JobCategory.PUBLIC_SAFETY},
+            # Healthcare jobs - 4 broad queries
+            {"query": "CNA nursing assistant patient care", "category": JobCategory.HEALTHCARE},
+            {"query": "entry level medical assistant phlebotomist", "category": JobCategory.HEALTHCARE},
+            {"query": "home health aide caregiver entry level", "category": JobCategory.HEALTHCARE},
+            {"query": "entry level pharmacy dental medical billing", "category": JobCategory.HEALTHCARE},
         ]
 
         try:
