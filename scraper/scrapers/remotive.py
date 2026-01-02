@@ -9,6 +9,30 @@ from config import MAX_JOBS_PER_SOURCE, TECH_SKILLS
 
 logger = logging.getLogger(__name__)
 
+# Non-US location patterns to filter out
+NON_US_LOCATION_PATTERNS = [
+    'germany', 'deutschland', 'berlin,', 'munich,', 'hamburg,', 'frankfurt,', 'cologne,', 'düsseldorf',
+    'united kingdom', ', uk', 'london,', 'manchester,', 'england',
+    'canada', 'toronto,', 'vancouver,', 'montreal,', 'ontario,', 'british columbia',
+    'india', 'bangalore', 'mumbai', 'delhi', 'hyderabad', 'chennai', 'pune',
+    'australia', 'sydney,', 'melbourne,', 'brisbane,',
+    'france', 'paris,', 'lyon,',
+    'netherlands', 'amsterdam,', 'rotterdam,',
+    'spain', 'madrid,', 'barcelona,',
+    'italy', 'milan,', 'rome,',
+    'poland', 'warsaw,', 'krakow,',
+    'ireland', 'dublin,',
+    'sweden', 'stockholm,',
+    'switzerland', 'zurich,', 'geneva,',
+    'austria', 'vienna,',
+    'belgium', 'brussels,',
+    'portugal', 'lisbon,',
+    'singapore', 'japan', 'tokyo,', 'china', 'shanghai,', 'beijing,',
+    'brazil', 'são paulo', 'sao paulo', 'mexico city', 'philippines', 'manila,',
+    'israel', 'tel aviv',
+    'europe only', 'emea only', 'apac only', 'latam only',
+]
+
 
 class RemotiveScraper(BaseScraper):
     """Scraper for Remotive.com API"""
@@ -37,6 +61,13 @@ class RemotiveScraper(BaseScraper):
                 try:
                     job = self._parse_job(raw_job)
                     if job:
+                        # STRICT US-ONLY FILTER: Skip non-US jobs based on location text
+                        # Allow "Remote" and "Worldwide" as they may include US
+                        location_lower = (job.location or "").lower()
+                        is_non_us = any(pattern in location_lower for pattern in NON_US_LOCATION_PATTERNS)
+                        if is_non_us:
+                            logger.debug(f"Skipping non-US job: {job.title} in {job.location}")
+                            continue
                         jobs.append(job)
                 except Exception as e:
                     logger.warning(f"Failed to parse job: {e}")

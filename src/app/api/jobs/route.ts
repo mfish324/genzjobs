@@ -109,7 +109,7 @@ export async function GET(req: NextRequest) {
       prisma.jobListing.count({ where }),
     ]);
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       jobs,
       pagination: {
         page,
@@ -118,6 +118,13 @@ export async function GET(req: NextRequest) {
         pages: Math.ceil(total / limit),
       },
     });
+
+    // Disable caching to ensure fresh data
+    response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate");
+    response.headers.set("Pragma", "no-cache");
+    response.headers.set("Expires", "0");
+
+    return response;
   } catch (error) {
     console.error("Jobs fetch error:", error);
     return NextResponse.json({ error: "Failed to fetch jobs" }, { status: 500 });
