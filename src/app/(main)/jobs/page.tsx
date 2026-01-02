@@ -514,7 +514,7 @@ function JobsContent() {
                         </div>
                         <div className="flex items-center gap-2">
                           {job.remote && (
-                            <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-xs">
+                            <Badge className="bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 text-xs">
                               <Wifi className="w-3 h-3 mr-1" />
                               Remote
                             </Badge>
@@ -552,12 +552,12 @@ function JobsContent() {
                       {job.skills.length > 0 && (
                         <div className="flex flex-wrap gap-1.5 mb-4">
                           {job.skills.slice(0, 3).map((skill) => (
-                            <Badge key={skill} variant="outline" className="text-xs bg-slate-50">
+                            <Badge key={skill} variant="outline" className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700">
                               {skill}
                             </Badge>
                           ))}
                           {job.skills.length > 3 && (
-                            <Badge variant="outline" className="text-xs bg-slate-50">
+                            <Badge variant="outline" className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700">
                               +{job.skills.length - 3}
                             </Badge>
                           )}
