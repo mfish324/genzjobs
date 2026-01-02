@@ -136,6 +136,10 @@ class JSearchScraper(BaseScraper):
                         try:
                             job = self._parse_job(raw_job, category)
                             if job and not self._job_exists(jobs, job):
+                                # STRICT US-ONLY FILTER: Only accept US jobs
+                                if job.country not in ["US", None]:
+                                    logger.debug(f"Skipping non-US job: {job.title} in {job.country}")
+                                    continue
                                 jobs.append(job)
                         except Exception as e:
                             logger.warning(f"Failed to parse JSearch job: {e}")
