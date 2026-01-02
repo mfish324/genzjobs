@@ -9,27 +9,69 @@ from config import MAX_JOBS_PER_SOURCE, TECH_SKILLS
 
 logger = logging.getLogger(__name__)
 
-# Non-US location patterns to filter out
+# Non-US location patterns to filter out (comprehensive list)
 NON_US_LOCATION_PATTERNS = [
-    'germany', 'deutschland', 'berlin,', 'munich,', 'hamburg,', 'frankfurt,', 'cologne,', 'düsseldorf',
-    'united kingdom', ', uk', 'london,', 'manchester,', 'england',
-    'canada', 'toronto,', 'vancouver,', 'montreal,', 'ontario,', 'british columbia',
-    'india', 'bangalore', 'mumbai', 'delhi', 'hyderabad', 'chennai', 'pune',
-    'australia', 'sydney,', 'melbourne,', 'brisbane,',
-    'france', 'paris,', 'lyon,',
-    'netherlands', 'amsterdam,', 'rotterdam,',
-    'spain', 'madrid,', 'barcelona,',
-    'italy', 'milan,', 'rome,',
-    'poland', 'warsaw,', 'krakow,',
-    'ireland', 'dublin,',
-    'sweden', 'stockholm,',
-    'switzerland', 'zurich,', 'geneva,',
-    'austria', 'vienna,',
-    'belgium', 'brussels,',
-    'portugal', 'lisbon,',
-    'singapore', 'japan', 'tokyo,', 'china', 'shanghai,', 'beijing,',
-    'brazil', 'são paulo', 'sao paulo', 'mexico city', 'philippines', 'manila,',
-    'israel', 'tel aviv',
+    # Germany - cities
+    'berlin', 'munich', 'hamburg', 'frankfurt', 'cologne', 'düsseldorf', 'stuttgart',
+    'dortmund', 'essen', 'leipzig', 'bremen', 'dresden', 'hanover', 'nuremberg',
+    'duisburg', 'bochum', 'wuppertal', 'bielefeld', 'bonn', 'münster', 'karlsruhe',
+    'mannheim', 'augsburg', 'wiesbaden', 'freiburg', 'heidelberg',
+    'germany', 'deutschland',
+    # UK
+    'london', 'manchester', 'birmingham', 'leeds', 'glasgow', 'liverpool', 'bristol',
+    'sheffield', 'edinburgh', 'leicester', 'coventry', 'bradford', 'cardiff', 'belfast',
+    'united kingdom', 'england', 'scotland', 'wales',
+    # Canada
+    'toronto', 'montreal', 'vancouver', 'calgary', 'edmonton', 'ottawa', 'winnipeg',
+    'ontario', 'british columbia', 'alberta', 'quebec',
+    # India
+    'bangalore', 'bengaluru', 'mumbai', 'delhi', 'hyderabad', 'chennai', 'pune',
+    'kolkata', 'noida', 'gurgaon', 'gurugram',
+    # Australia
+    'sydney', 'melbourne', 'brisbane', 'perth', 'adelaide', 'canberra',
+    # France
+    'paris', 'lyon', 'marseille', 'toulouse', 'nice', 'bordeaux',
+    # Netherlands
+    'amsterdam', 'rotterdam', 'the hague', 'utrecht', 'eindhoven',
+    # Spain
+    'madrid', 'barcelona', 'valencia', 'seville', 'bilbao',
+    # Italy
+    'rome', 'milan', 'naples', 'turin', 'bologna', 'florence',
+    # Poland
+    'warsaw', 'krakow', 'wroclaw', 'poznan', 'gdansk',
+    # Ireland
+    'dublin', 'cork', 'limerick', 'galway',
+    # Sweden
+    'stockholm', 'gothenburg', 'malmo',
+    # Switzerland
+    'zurich', 'geneva', 'basel', 'bern', 'lausanne',
+    # Austria
+    'vienna', 'graz', 'linz', 'salzburg', 'innsbruck',
+    # Belgium
+    'brussels', 'antwerp', 'ghent',
+    # Portugal
+    'lisbon', 'porto',
+    # Other
+    'singapore', 'tokyo', 'osaka', 'shanghai', 'beijing', 'shenzhen', 'hong kong',
+    'são paulo', 'sao paulo', 'rio de janeiro', 'mexico city', 'manila', 'tel aviv',
+    'cape town', 'johannesburg', 'dubai', 'seoul',
+    # Regional exclusions
+    'europe only', 'emea only', 'apac only', 'latam only',
+]
+
+# Non-US company name patterns
+NON_US_COMPANY_PATTERNS = [
+    'gmbh', 'e.v.', 'ohg', ' kg', ' ag',  # German
+    'pvt ltd', 'pvt. ltd', 'pty ltd',  # India/Australia
+    's.a.', 's.l.', 'b.v.', 'n.v.', 'a/s', ' ab', ' oy', 's.p.a.', 's.r.l.',  # European
+]
+
+# German job title patterns
+GERMAN_TITLE_PATTERNS = [
+    '(m/w/d)', '(w/m/d)', '(d/m/w)', '(m/f/d)', '(all genders)',
+    'werkstudent', 'praktikum', 'ausbildung', 'sachbearbeiter',
+    'mitarbeiter', 'entwickler', 'berater', 'ingenieur',
+    'kaufmann', 'kauffrau', 'fachkraft',
 ]
 
 
@@ -60,12 +102,26 @@ class ArbeitnowScraper(BaseScraper):
                 try:
                     job = self._parse_job(raw_job)
                     if job:
-                        # STRICT US-ONLY FILTER: Skip non-US jobs based on location text
+                        # STRICT US-ONLY FILTER: Multiple checks
                         location_lower = (job.location or "").lower()
-                        is_non_us = any(pattern in location_lower for pattern in NON_US_LOCATION_PATTERNS)
-                        if is_non_us:
-                            logger.debug(f"Skipping non-US job: {job.title} in {job.location}")
+                        company_lower = (job.company_name or "").lower()
+                        title_lower = (job.title or "").lower()
+
+                        # Check location
+                        if any(pattern in location_lower for pattern in NON_US_LOCATION_PATTERNS):
+                            logger.debug(f"Skipping non-US location: {job.title} in {job.location}")
                             continue
+
+                        # Check company name
+                        if any(pattern in company_lower for pattern in NON_US_COMPANY_PATTERNS):
+                            logger.debug(f"Skipping non-US company: {job.title} at {job.company_name}")
+                            continue
+
+                        # Check title for German patterns
+                        if any(pattern in title_lower for pattern in GERMAN_TITLE_PATTERNS):
+                            logger.debug(f"Skipping German title: {job.title}")
+                            continue
+
                         jobs.append(job)
                 except Exception as e:
                     logger.warning(f"Failed to parse job: {e}")
