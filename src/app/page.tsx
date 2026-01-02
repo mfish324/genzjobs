@@ -106,9 +106,8 @@ export default function HomePage() {
               </Button>
               <Button
                 size="lg"
-                variant="outline"
                 asChild
-                className="border-white text-white hover:bg-white/10"
+                className="bg-transparent border-2 border-white text-white hover:bg-white hover:text-violet-600 transition-colors"
               >
                 <Link href="/jobs">Browse Jobs</Link>
               </Button>
