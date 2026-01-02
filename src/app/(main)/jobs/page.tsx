@@ -112,7 +112,9 @@ function JobsContent() {
       if (selectedEmployers.length > 0) params.set("employers", selectedEmployers.join(","));
       params.set("page", page.toString());
 
-      const res = await fetch(`/api/jobs?${params.toString()}`);
+      const res = await fetch(`/api/jobs?${params.toString()}`, {
+        cache: 'no-store',
+      });
       const data = await res.json();
 
       if (data.error) {
