@@ -21,6 +21,7 @@ import {
   Settings,
   Building2,
   Sparkles,
+  Bookmark,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -176,6 +177,12 @@ export function Navbar() {
                       <Link href="/applications" className="cursor-pointer gap-2">
                         <Briefcase className="w-4 h-4" />
                         My Applications
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/saved-jobs" className="cursor-pointer gap-2">
+                        <Bookmark className="w-4 h-4" />
+                        Saved Jobs
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />

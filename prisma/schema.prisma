@@ -52,6 +52,9 @@ model User {
   // Resume relation
   resume         Resume?
 
+  // Saved jobs relation
+  savedJobs      SavedJob[]
+
   @@map("users")
 }
 
@@ -142,6 +145,7 @@ model JobListing {
 
   // Relations
   applications    Application[]
+  savedBy         SavedJob[]
 
   // Deduplication
   @@unique([source, sourceId])
@@ -633,4 +637,26 @@ model Resume {
   user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("resumes")
+}
+
+// ==================== Saved Jobs ====================
+
+model SavedJob {
+  id           String   @id @default(cuid())
+  userId       String
+  jobListingId String
+
+  // Optional notes
+  notes        String?  @db.Text
+
+  // Timestamps
+  savedAt      DateTime @default(now())
+
+  // Relations
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobListing   JobListing @relation(fields: [jobListingId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, jobListingId])
+  @@index([userId, savedAt])
+  @@map("saved_jobs")
 }

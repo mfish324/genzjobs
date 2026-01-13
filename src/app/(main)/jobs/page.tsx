@@ -24,7 +24,9 @@ import {
   ChevronsRight,
   PanelLeftClose,
   PanelLeft,
+  Bookmark,
 } from "lucide-react";
+import { useSession } from "next-auth/react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,6 +48,7 @@ import {
 } from "@/components/ui/sheet";
 import { EXPERIENCE_LEVELS, JOB_TYPES, JOB_CATEGORIES, XP_REWARDS } from "@/lib/constants";
 import { EmployerFacets } from "@/components/employer-facets";
+import { SaveJobButton } from "@/components/save-job-button";
 
 interface Job {
   id: string;
@@ -79,11 +82,13 @@ interface Pagination {
 function JobsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { data: session } = useSession();
 
   const [jobs, setJobs] = useState<Job[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [savedJobIds, setSavedJobIds] = useState<Set<string>>(new Set());
 
   // Filter states
   const [search, setSearch] = useState(searchParams.get("search") || "");
@@ -137,6 +142,37 @@ function JobsContent() {
   useEffect(() => {
     fetchJobs();
   }, [fetchJobs]);
+
+  // Fetch saved job IDs when jobs change or user session changes
+  useEffect(() => {
+    const fetchSavedJobs = async () => {
+      if (!session?.user || jobs.length === 0) {
+        setSavedJobIds(new Set());
+        return;
+      }
+      try {
+        const jobIds = jobs.map(j => j.id).join(",");
+        const res = await fetch(`/api/saved-jobs/check?jobIds=${jobIds}`);
+        const data = await res.json();
+        setSavedJobIds(new Set(data.savedJobIds || []));
+      } catch (error) {
+        console.error("Failed to fetch saved jobs:", error);
+      }
+    };
+    fetchSavedJobs();
+  }, [jobs, session?.user]);
+
+  const handleSaveChange = (jobId: string, saved: boolean) => {
+    setSavedJobIds(prev => {
+      const next = new Set(prev);
+      if (saved) {
+        next.add(jobId);
+      } else {
+        next.delete(jobId);
+      }
+      return next;
+    });
+  };
 
   const handleSearch = () => {
     setPage(1);
@@ -523,6 +559,12 @@ function JobsContent() {
                             <Zap className="w-3 h-3 mr-1" />
                             +{XP_REWARDS.JOB_APPLICATION} XP
                           </Badge>
+                          <SaveJobButton
+                            jobId={job.id}
+                            initialSaved={savedJobIds.has(job.id)}
+                            onSaveChange={(saved) => handleSaveChange(job.id, saved)}
+                            className="h-7 w-7"
+                          />
                         </div>
                       </div>
 
