@@ -35,7 +35,7 @@ JOB_SOURCES = {
         "type": "api",
     },
     "arbeitnow": {
-        "enabled": True,
+        "enabled": False,  # Disabled - primarily European jobs
         "url": "https://www.arbeitnow.com/api/job-board-api",
         "type": "api",
     },
