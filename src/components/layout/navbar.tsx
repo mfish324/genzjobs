@@ -38,6 +38,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { StreakDisplay } from "@/components/streak-display";
+import { BadgeDisplayCompact } from "@/components/badge-display";
 import { cn } from "@/lib/utils";
 import { levelProgress, xpToNextLevel } from "@/lib/constants";
 
@@ -106,6 +108,16 @@ export function Navbar() {
               <div className="w-8 h-8 rounded-full shimmer" />
             ) : user ? (
               <>
+                {/* Streak Display - Desktop */}
+                <div className="hidden md:block">
+                  <StreakDisplay compact />
+                </div>
+
+                {/* Badges Display - Desktop */}
+                <div className="hidden md:block">
+                  <BadgeDisplayCompact limit={3} />
+                </div>
+
                 {/* XP Display - Desktop */}
                 <div className="hidden md:flex items-center gap-3 px-4 py-2 rounded-xl bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20">
                   <div className="text-center">

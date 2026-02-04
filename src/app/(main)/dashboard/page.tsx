@@ -10,6 +10,8 @@ import {
   TrendingUp,
   Calendar,
   CheckCircle2,
+  Flame,
+  Award,
 } from "lucide-react";
 
 import { authOptions } from "@/lib/auth";
@@ -19,6 +21,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { levelProgress, xpToNextLevel, calculateLevel } from "@/lib/constants";
+import { StreakDisplay } from "@/components/streak-display";
+import { BadgeDisplay } from "@/components/badge-display";
 
 async function getDashboardData(userId: string) {
   const [user, applications, activeQuests, recentActivity] = await Promise.all([
@@ -85,6 +89,11 @@ export default async function DashboardPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Welcome back, {user.name?.split(" ")[0]}!</h1>
         <p className="text-muted-foreground">Here&apos;s your career progress at a glance.</p>
+      </div>
+
+      {/* Streak Banner */}
+      <div className="mb-8">
+        <StreakDisplay />
       </div>
 
       {/* Stats Overview */}
@@ -265,6 +274,20 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Badges Section */}
+      <Card className="mt-8">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Award className="w-5 h-5 text-amber-500" />
+            Achievements & Badges
+          </CardTitle>
+          <CardDescription>Unlock badges by completing milestones</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <BadgeDisplay />
+        </CardContent>
+      </Card>
 
       {/* Recent Applications */}
       <Card className="mt-8">

@@ -4,6 +4,7 @@ import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { XP_REWARDS, calculateLevel } from "@/lib/constants";
+import { calculateStreakXP, getStreakMultiplier } from "@/lib/streaks";
 
 const applicationSchema = z.object({
   jobListingId: z.string(),
@@ -79,8 +80,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Already applied to this job" }, { status: 400 });
     }
 
-    // Calculate XP based on job difficulty
-    const xpEarned = XP_REWARDS.JOB_APPLICATION * job.difficultyLevel;
+    // Get user's current streak for multiplier
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { currentStreak: true, xp: true },
+    });
+
+    // Calculate XP based on job difficulty and streak multiplier
+    const baseXP = XP_REWARDS.JOB_APPLICATION * job.difficultyLevel;
+    const streakDays = user?.currentStreak || 0;
+    const xpEarned = calculateStreakXP(baseXP, streakDays);
+    const multiplier = getStreakMultiplier(streakDays);
 
     // Create application and update user XP in transaction
     const [application] = await prisma.$transaction([
@@ -98,7 +108,7 @@ export async function POST(req: NextRequest) {
         where: { id: session.user.id },
         data: {
           xp: { increment: xpEarned },
-          level: calculateLevel((session.user.xp || 0) + xpEarned),
+          level: calculateLevel((user?.xp || 0) + xpEarned),
         },
       }),
       prisma.xpTransaction.create({
@@ -106,7 +116,9 @@ export async function POST(req: NextRequest) {
           userId: session.user.id,
           amount: xpEarned,
           type: "application",
-          description: `Applied to ${job.title} at ${job.company}`,
+          description: multiplier > 1
+            ? `Applied to ${job.title} at ${job.company} (${multiplier}x streak bonus!)`
+            : `Applied to ${job.title} at ${job.company}`,
           referenceId: jobListingId,
           referenceType: "application",
         },
@@ -116,7 +128,23 @@ export async function POST(req: NextRequest) {
     // Update quest progress (apply_jobs action)
     await updateQuestProgress(session.user.id, "apply_jobs");
 
-    return NextResponse.json({ application, xpEarned }, { status: 201 });
+    // Check and award any new badges
+    try {
+      await fetch(new URL("/api/badges", process.env.NEXTAUTH_URL || "http://localhost:3000"), {
+        method: "POST",
+        headers: { cookie: `next-auth.session-token=${session.user.id}` },
+      });
+    } catch {
+      // Non-critical: badge check can fail silently
+    }
+
+    return NextResponse.json({
+      application,
+      xpEarned,
+      baseXP,
+      streakMultiplier: multiplier,
+      streakDays,
+    }, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.issues[0].message }, { status: 400 });

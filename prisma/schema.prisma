@@ -25,6 +25,18 @@ model User {
   xp             Int       @default(0)
   level          Int       @default(1)
 
+  // Streak tracking
+  currentStreak  Int       @default(0)
+  longestStreak  Int       @default(0)
+  lastStreakDate DateTime?
+
+  // Daily spin
+  lastSpinDate   DateTime?
+
+  // AI recommendations opt-in
+  enableAiRecs   Boolean   @default(false)
+  skillEmbedding Json?     // Stored embedding vector for job matching
+
   // Profile
   skills         String[]  @default([])
   experience     String?   // "entry", "mid", "senior"
@@ -45,6 +57,9 @@ model User {
   userRewards    UserReward[]
   chatMessages   ChatMessage[]
   eventRegistrations EventRegistration[]
+  badges         UserBadge[]
+  skippedJobs    SkippedJob[]
+  jamParticipations JamParticipant[]
 
   // Employer relation (if user is an employer)
   employer       Employer?
@@ -659,4 +674,150 @@ model SavedJob {
   @@unique([userId, jobListingId])
   @@index([userId, savedAt])
   @@map("saved_jobs")
+}
+
+// ==================== Skipped Jobs (for algo training) ====================
+
+model SkippedJob {
+  id           String   @id @default(cuid())
+  userId       String
+  jobListingId String
+
+  // Timestamps
+  skippedAt    DateTime @default(now())
+
+  // Relations
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, jobListingId])
+  @@index([userId, skippedAt])
+  @@map("skipped_jobs")
+}
+
+// ==================== Badges ====================
+
+model Badge {
+  id          String   @id @default(cuid())
+
+  // Badge info
+  slug        String   @unique
+  name        String
+  description String
+  icon        String   // SVG path or emoji
+  color       String   // Hex color for badge background
+
+  // Unlock criteria
+  criteria    String   // "applications_10", "streak_7", "first_offer", etc.
+  threshold   Int      @default(1)
+
+  // Rarity
+  rarity      String   @default("common") // "common", "rare", "epic", "legendary"
+
+  // XP bonus for earning
+  xpBonus     Int      @default(50)
+
+  // Status
+  isActive    Boolean  @default(true)
+
+  // Timestamps
+  createdAt   DateTime @default(now())
+
+  // Relations
+  userBadges  UserBadge[]
+
+  @@map("badges")
+}
+
+model UserBadge {
+  id        String   @id @default(cuid())
+  userId    String
+  badgeId   String
+
+  // When earned
+  earnedAt  DateTime @default(now())
+
+  // Display preference
+  isPinned  Boolean  @default(false)
+
+  // Relations
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge     Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId])
+  @@index([userId, earnedAt])
+  @@map("user_badges")
+}
+
+// ==================== Job Jam Sessions ====================
+
+model JamSession {
+  id          String   @id @default(cuid())
+  chatRoomId  String
+
+  // Session info
+  title       String
+  description String?
+  type        String   // "mock_interview", "resume_review", "networking"
+
+  // Schedule
+  startTime   DateTime
+  duration    Int      @default(30) // minutes
+
+  // Capacity
+  maxParticipants Int @default(10)
+
+  // XP reward
+  xpReward    Int      @default(50)
+
+  // Status
+  status      String   @default("scheduled") // "scheduled", "active", "completed", "cancelled"
+
+  // Host
+  hostUserId  String
+
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  participants JamParticipant[]
+
+  @@index([chatRoomId, startTime])
+  @@index([status])
+  @@map("jam_sessions")
+}
+
+model JamParticipant {
+  id           String    @id @default(cuid())
+  jamSessionId String
+  userId       String
+
+  // Participation
+  joinedAt     DateTime  @default(now())
+  leftAt       DateTime?
+  xpEarned     Int       @default(0)
+
+  // Relations
+  jamSession   JamSession @relation(fields: [jamSessionId], references: [id], onDelete: Cascade)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([jamSessionId, userId])
+  @@map("jam_participants")
+}
+
+// ==================== Daily Spin ====================
+
+model DailySpin {
+  id        String   @id @default(cuid())
+  userId    String
+
+  // Spin result
+  xpAmount  Int
+  spinDate  DateTime @default(now())
+
+  // Track streak bonus applied
+  streakMultiplier Float @default(1.0)
+
+  @@index([userId, spinDate])
+  @@map("daily_spins")
 }
