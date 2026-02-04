@@ -114,6 +114,14 @@ model VerificationToken {
 
 // ==================== Jobs ====================
 
+// Experience level classification for multi-platform job targeting
+enum ExperienceLevel {
+  ENTRY
+  MID
+  SENIOR
+  EXECUTIVE
+}
+
 model JobListing {
   id              String   @id @default(cuid())
 
@@ -123,7 +131,7 @@ model JobListing {
   companyLogo     String?
   location        String?
   jobType         String?  // "full-time", "part-time", "contract", "internship", "apprenticeship"
-  experienceLevel String?  // "entry", "mid", "senior"
+  experienceLevel ExperienceLevel? // Classified experience level
   category        String   @default("tech") // "tech", "trades", "public-safety", "healthcare", "apprenticeship"
 
   // Details
@@ -151,6 +159,14 @@ model JobListing {
   // XP calculation
   difficultyLevel Int      @default(1) // 1-5, affects XP reward
 
+  // Multi-platform classification
+  audienceTags    String[] @default([]) // ['genz', 'mid_career', 'senior', 'executive']
+  classificationConfidence Float? // 0-1 confidence score from classifier
+
+  // RJRP verification
+  isRjrpVerified  Boolean  @default(false)
+  rjrpEmployerId  String?  // FK for verified employers (optional)
+
   // Status
   isActive        Boolean  @default(true)
   postedAt        DateTime @default(now())
@@ -168,6 +184,8 @@ model JobListing {
   @@index([isActive, category])
   @@index([company])
   @@index([skills])
+  @@index([audienceTags], type: Gin) // GIN index for efficient array queries
+  @@index([experienceLevel])
   @@map("job_listings")
 }
 
