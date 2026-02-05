@@ -37,7 +37,8 @@ const TITLE_SIGNALS = {
     'intern', 'internship', 'entry level', 'entry-level',
     'junior', 'associate', 'coordinator', 'assistant',
     'trainee', 'apprentice', 'graduate', 'early career',
-    'new grad', 'jr.', 'jr '
+    'new grad', 'jr.', 'jr ', 'student', 'fellowship',
+    'residency', 'resident'
   ],
   mid: [
     'specialist', 'analyst', 'manager', 'lead',
@@ -50,12 +51,17 @@ const TITLE_SIGNALS = {
     'senior manager', 'engineering manager'
   ],
   executive: [
-    'vp', 'vice president', 'chief', 'cto', 'cfo', 'ceo',
-    'coo', 'cmo', 'cio', 'president', 'partner',
-    'executive director', 'svp', 'evp', 'general manager', 'gm',
+    'vice president', 'chief executive', 'chief technology', 'chief financial',
+    'chief operating', 'chief marketing', 'chief information',
+    'executive director', 'svp', 'evp', 'general manager',
     'founder', 'co-founder', 'managing director'
   ]
 } as const;
+
+// Executive signals that need word boundary matching (to avoid "doctoral" matching "cto")
+const EXECUTIVE_WORD_BOUNDARY_SIGNALS = [
+  'vp', 'cto', 'cfo', 'ceo', 'coo', 'cmo', 'cio', 'president', 'partner', 'gm'
+];
 
 // Words that look like seniority indicators but aren't
 const SENIOR_BLOCKLIST = [
@@ -133,6 +139,13 @@ const DESCRIPTION_SIGNALS = {
 // ==================== Parsing Functions ====================
 
 /**
+ * Validate years are reasonable (0-25 range)
+ */
+function isReasonableYears(years: number): boolean {
+  return years >= 0 && years <= 25;
+}
+
+/**
  * Parse years of experience from job description
  */
 export function parseYearsRequired(text: string): { min: number; max: number } | null {
@@ -144,31 +157,41 @@ export function parseYearsRequired(text: string): { min: number; max: number } |
     return { min: 0, max: 0 };
   }
 
-  // Pattern: "X-Y years" or "X to Y years"
-  const rangeMatch = lowerText.match(/(\d+)\s*(?:to|-)\s*(\d+)\s*(?:\+)?\s*years?/i);
+  // Pattern: "X-Y years" or "X to Y years" (with experience context)
+  const rangeMatch = lowerText.match(/(\d{1,2})\s*(?:to|-)\s*(\d{1,2})\s*(?:\+)?\s*years?\s*(?:of\s+)?(?:experience|exp)?/i);
   if (rangeMatch) {
-    return { min: parseInt(rangeMatch[1]), max: parseInt(rangeMatch[2]) };
+    const min = parseInt(rangeMatch[1]);
+    const max = parseInt(rangeMatch[2]);
+    if (isReasonableYears(min) && isReasonableYears(max)) {
+      return { min, max };
+    }
   }
 
-  // Pattern: "X+ years"
-  const plusMatch = lowerText.match(/(\d+)\+\s*years?/i);
+  // Pattern: "X+ years" (with experience context nearby)
+  const plusMatch = lowerText.match(/(\d{1,2})\+\s*years?\s*(?:of\s+)?(?:experience|exp)?/i);
   if (plusMatch) {
     const years = parseInt(plusMatch[1]);
-    return { min: years, max: years + 5 }; // Estimate max as +5
+    if (isReasonableYears(years)) {
+      return { min: years, max: Math.min(years + 5, 25) };
+    }
   }
 
   // Pattern: "minimum X years" or "at least X years"
-  const minMatch = lowerText.match(/(?:minimum|at least|min\.?)\s*(\d+)\s*years?/i);
+  const minMatch = lowerText.match(/(?:minimum|at least|min\.?)\s*(\d{1,2})\s*years?\s*(?:of\s+)?(?:experience|exp)?/i);
   if (minMatch) {
     const years = parseInt(minMatch[1]);
-    return { min: years, max: years + 3 };
+    if (isReasonableYears(years)) {
+      return { min: years, max: Math.min(years + 3, 25) };
+    }
   }
 
   // Pattern: "X years of experience" or "X years experience"
-  const simpleMatch = lowerText.match(/(\d+)\s*years?\s*(?:of\s+)?experience/i);
+  const simpleMatch = lowerText.match(/(\d{1,2})\s*years?\s*(?:of\s+)?experience/i);
   if (simpleMatch) {
     const years = parseInt(simpleMatch[1]);
-    return { min: years, max: years };
+    if (isReasonableYears(years)) {
+      return { min: years, max: years };
+    }
   }
 
   return null;
@@ -188,6 +211,7 @@ function yearsToLevel(years: { min: number; max: number }): ExperienceLevelType 
 
 /**
  * Map salary to experience level
+ * Thresholds adjusted for tech industry where salaries skew higher
  */
 function salaryToLevel(salaryMin?: number | null, salaryMax?: number | null): ExperienceLevelType | null {
   // Need at least one salary value
@@ -198,10 +222,10 @@ function salaryToLevel(salaryMin?: number | null, salaryMax?: number | null): Ex
     ? (salaryMin + salaryMax) / 2
     : (salaryMin || salaryMax)!;
 
-  // These thresholds assume USD annual salary
-  if (salary < 50000) return 'ENTRY';
-  if (salary < 90000) return 'MID';
-  if (salary < 150000) return 'SENIOR';
+  // Thresholds assume USD annual salary, adjusted for tech
+  if (salary < 60000) return 'ENTRY';
+  if (salary < 100000) return 'MID';
+  if (salary < 200000) return 'SENIOR';
   return 'EXECUTIVE';
 }
 
@@ -215,10 +239,10 @@ function getSalaryBand(salaryMin?: number | null, salaryMax?: number | null): st
     ? (salaryMin + salaryMax) / 2
     : (salaryMin || salaryMax)!;
 
-  if (salary < 50000) return '<$50k (entry)';
-  if (salary < 90000) return '$50k-$90k (mid)';
-  if (salary < 150000) return '$90k-$150k (senior)';
-  return '>$150k (executive)';
+  if (salary < 60000) return '<$60k (entry)';
+  if (salary < 100000) return '$60k-$100k (mid)';
+  if (salary < 200000) return '$100k-$200k (senior)';
+  return '>$200k (executive)';
 }
 
 /**
@@ -239,6 +263,15 @@ function isRetailServiceCompany(company?: string): boolean {
 }
 
 /**
+ * Check if a word boundary signal matches in text
+ */
+function matchesWithWordBoundary(text: string, signal: string): boolean {
+  // Create regex with word boundaries
+  const regex = new RegExp(`\\b${signal}\\b`, 'i');
+  return regex.test(text);
+}
+
+/**
  * Analyze job title for experience level signals
  */
 function analyzeTitleSignals(title: string): { level: ExperienceLevelType | null; match: string | null } {
@@ -256,7 +289,14 @@ function analyzeTitleSignals(title: string): { level: ExperienceLevelType | null
     return { level: 'MID', match: 'senior (care context)' };
   }
 
-  // Check executive signals first (highest priority)
+  // Check executive word-boundary signals first (cto, ceo, vp, etc.)
+  for (const signal of EXECUTIVE_WORD_BOUNDARY_SIGNALS) {
+    if (matchesWithWordBoundary(lowerTitle, signal)) {
+      return { level: 'EXECUTIVE', match: signal };
+    }
+  }
+
+  // Check executive phrase signals
   for (const signal of TITLE_SIGNALS.executive) {
     if (lowerTitle.includes(signal)) {
       return { level: 'EXECUTIVE', match: signal };
