@@ -23,11 +23,20 @@ class JobCategory(str, Enum):
 
 
 class ExperienceLevel(str, Enum):
+    """Legacy experience level enum (for backward compatibility)"""
     ENTRY = "Entry Level"
     MID = "Mid Level"
     SENIOR = "Senior Level"
     LEAD = "Lead"
     MANAGER = "Manager"
+
+
+class ClassifiedExperienceLevel(str, Enum):
+    """Classified experience level enum (matches Prisma schema)"""
+    ENTRY = "ENTRY"
+    MID = "MID"
+    SENIOR = "SENIOR"
+    EXECUTIVE = "EXECUTIVE"
 
 
 class ScrapedJob(BaseModel):
@@ -54,6 +63,11 @@ class ScrapedJob(BaseModel):
     publisher: Optional[str] = None  # Original job board (LinkedIn, Indeed, etc.)
     posted_at: Optional[datetime] = None
     scraped_at: datetime = Field(default_factory=datetime.utcnow)
+
+    # Classification fields (populated by classifier)
+    classified_level: Optional[ClassifiedExperienceLevel] = None
+    audience_tags: List[str] = Field(default_factory=list)  # ['genz', 'mid_career', 'senior', 'executive']
+    classification_confidence: Optional[float] = None
 
 
 class ScrapeResult(BaseModel):

@@ -92,7 +92,10 @@ class Database:
                                 "updatedAt" = $12,
                                 category = $14,
                                 publisher = $15,
-                                country = $16
+                                country = $16,
+                                "experienceLevel" = $17,
+                                "audienceTags" = $18,
+                                "classificationConfidence" = $19
                             WHERE source = $1 AND "sourceId" = $13
                             ''',
                             job.source,
@@ -111,6 +114,9 @@ class Database:
                             job.category.value if hasattr(job.category, 'value') else str(job.category),
                             job.publisher,
                             job.country,
+                            job.classified_level.value if job.classified_level else None,
+                            job.audience_tags,
+                            job.classification_confidence,
                         )
                         updated += 1
                     else:
@@ -121,12 +127,14 @@ class Database:
                                 id, "sourceId", source, title, company, "companyLogo",
                                 location, "jobType", "experienceLevel", category, description,
                                 "salaryMin", "salaryMax", "salaryCurrency", skills,
-                                remote, country, "applyUrl", publisher, "postedAt", "createdAt", "updatedAt"
+                                remote, country, "applyUrl", publisher, "postedAt", "createdAt", "updatedAt",
+                                "audienceTags", "classificationConfidence"
                             ) VALUES (
                                 gen_random_uuid(), $1, $2, $3, $4, $5,
                                 $6, $7, $8, $9, $10,
                                 $11, $12, $13, $14,
-                                $15, $16, $17, $18, $19, $20, $21
+                                $15, $16, $17, $18, $19, $20, $21,
+                                $22, $23
                             )
                             ''',
                             job.external_id,
@@ -136,7 +144,7 @@ class Database:
                             job.company_logo,
                             job.location,
                             job.job_type,
-                            job.experience_level,
+                            job.classified_level.value if job.classified_level else None,
                             job.category.value if hasattr(job.category, 'value') else str(job.category),
                             job.description,
                             job.salary_min,
@@ -150,6 +158,8 @@ class Database:
                             job.posted_at or datetime.utcnow(),
                             datetime.utcnow(),
                             datetime.utcnow(),
+                            job.audience_tags,
+                            job.classification_confidence,
                         )
                         added += 1
 
