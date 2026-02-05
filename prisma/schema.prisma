@@ -122,6 +122,15 @@ enum ExperienceLevel {
   EXECUTIVE
 }
 
+// ATS platform enum for company career page scrapers
+enum ATSPlatform {
+  GREENHOUSE
+  LEVER
+  WORKABLE
+  RECRUITEE
+  SMARTRECRUITERS
+}
+
 model JobListing {
   id              String   @id @default(cuid())
 
@@ -171,6 +180,7 @@ model JobListing {
   isActive        Boolean  @default(true)
   postedAt        DateTime @default(now())
   expiresAt       DateTime?
+  lastSeenAt      DateTime?  // Last time seen in source API (for stale job cleanup)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -577,6 +587,25 @@ model Company {
   updatedAt     DateTime @updatedAt
 
   @@map("companies")
+}
+
+// Track ATS integrations for company career pages
+model CompanyATS {
+  id              String      @id @default(cuid())
+  companyName     String
+  atsPlatform     ATSPlatform
+  slug            String      // ATS-specific identifier (e.g., "stripe" for boards.greenhouse.io/stripe)
+  boardUrl        String?     // Full URL to career page (optional, for reference)
+  isActive        Boolean     @default(true)
+  lastScrapedAt   DateTime?
+  lastJobCount    Int?
+  scrapeFailures  Int         @default(0)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@unique([atsPlatform, slug])
+  @@index([isActive, atsPlatform])
+  @@map("company_ats")
 }
 
 // ==================== Employers ====================
