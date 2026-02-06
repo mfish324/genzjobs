@@ -126,6 +126,7 @@ enum ExperienceLevel {
 enum ATSPlatform {
   GREENHOUSE
   LEVER
+  ASHBY
   WORKABLE
   RECRUITEE
   SMARTRECRUITERS

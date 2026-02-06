@@ -10,6 +10,7 @@ import { classifyJobWithCompany } from '@/lib/classification/classifyJob';
 import { ATSPlatform } from '@prisma/client';
 import { fetchGreenhouseJobs, getGreenhouseRateLimitDelay } from './greenhouse';
 import { fetchLeverJobs, getLeverRateLimitDelay } from './lever';
+import { fetchAshbyJobs, getAshbyRateLimitDelay } from './ashby';
 import { delay } from './utils';
 import type { ScrapedJobData } from './greenhouse';
 
@@ -148,6 +149,9 @@ async function scrapeCompany(
         break;
       case 'LEVER':
         jobs = await fetchLeverJobs(company.slug, company.companyName);
+        break;
+      case 'ASHBY':
+        jobs = await fetchAshbyJobs(company.slug, company.companyName);
         break;
       default:
         throw new Error(`Unsupported platform: ${company.atsPlatform}`);
@@ -301,6 +305,8 @@ function getRateLimitDelay(platform: ATSPlatform): number {
       return getGreenhouseRateLimitDelay();
     case 'LEVER':
       return getLeverRateLimitDelay();
+    case 'ASHBY':
+      return getAshbyRateLimitDelay();
     default:
       return 2000; // Default 2s
   }
@@ -310,5 +316,6 @@ function getRateLimitDelay(platform: ATSPlatform): number {
 
 export { fetchGreenhouseJobs } from './greenhouse';
 export { fetchLeverJobs } from './lever';
+export { fetchAshbyJobs } from './ashby';
 export * from './utils';
 export * from './cleanup';

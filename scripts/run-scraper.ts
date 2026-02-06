@@ -64,10 +64,10 @@ function parseArgs(): CLIOptions {
       options.help = true;
     } else if (arg === '--platform' && args[i + 1]) {
       const platform = args[++i].toUpperCase();
-      if (platform === 'GREENHOUSE' || platform === 'LEVER') {
+      if (platform === 'GREENHOUSE' || platform === 'LEVER' || platform === 'ASHBY') {
         options.platform = platform;
       } else {
-        console.error(`Invalid platform: ${platform}. Use GREENHOUSE or LEVER.`);
+        console.error(`Invalid platform: ${platform}. Use GREENHOUSE, LEVER, or ASHBY.`);
         process.exit(1);
       }
     } else if (arg === '--company' && args[i + 1]) {
