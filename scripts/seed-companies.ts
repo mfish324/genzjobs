@@ -104,6 +104,26 @@ const GREENHOUSE_COMPANIES: CompanyData[] = [
   { companyName: 'Snyk', atsPlatform: 'GREENHOUSE', slug: 'snyk' },
 ];
 
+const WORKDAY_COMPANIES: CompanyData[] = [
+  // Format: tenant.server.site
+  // Large Enterprise Companies
+  { companyName: 'Salesforce', atsPlatform: 'WORKDAY', slug: 'salesforce.wd12.External_Career_Site' },
+  { companyName: 'IBM', atsPlatform: 'WORKDAY', slug: 'ibm.wd1.IBM_Careers' },
+  { companyName: 'Walmart', atsPlatform: 'WORKDAY', slug: 'walmart.wd5.WalmartExternal' },
+  { companyName: 'Target', atsPlatform: 'WORKDAY', slug: 'target.wd5.targetcareers' },
+  { companyName: 'Bank of America', atsPlatform: 'WORKDAY', slug: 'bankofamerica.wd1.BofAExternal' },
+  { companyName: 'Capital One', atsPlatform: 'WORKDAY', slug: 'capitalone.wd12.Capital_One' },
+  { companyName: 'JPMorgan Chase', atsPlatform: 'WORKDAY', slug: 'jpmorganchase.wd5.JPMorganChaseExternal' },
+  { companyName: 'Deloitte', atsPlatform: 'WORKDAY', slug: 'deloitte.wd1.GlobalCareers' },
+  { companyName: 'Accenture', atsPlatform: 'WORKDAY', slug: 'accenture.wd3.AccentureCareers' },
+  { companyName: 'EY', atsPlatform: 'WORKDAY', slug: 'ey.wd5.EY_Careers' },
+  { companyName: 'PwC', atsPlatform: 'WORKDAY', slug: 'pwc.wd3.PWC_Careers' },
+  { companyName: 'KPMG', atsPlatform: 'WORKDAY', slug: 'kpmgus.wd5.KPMG_Careers' },
+  { companyName: 'Adobe', atsPlatform: 'WORKDAY', slug: 'adobe.wd5.external_experienced' },
+  { companyName: 'ServiceNow', atsPlatform: 'WORKDAY', slug: 'servicenow.wd1.External' },
+  { companyName: 'Workday', atsPlatform: 'WORKDAY', slug: 'workday.wd5.Workday' },
+];
+
 const LEVER_COMPANIES: CompanyData[] = [
   // Tech Companies
   { companyName: 'Netflix', atsPlatform: 'LEVER', slug: 'netflix' },
@@ -132,19 +152,46 @@ const LEVER_COMPANIES: CompanyData[] = [
   { companyName: 'JetBrains', atsPlatform: 'LEVER', slug: 'jetbrains' },
 ];
 
-const ALL_COMPANIES = [...GREENHOUSE_COMPANIES, ...LEVER_COMPANIES];
+const ALL_COMPANIES = [...GREENHOUSE_COMPANIES, ...LEVER_COMPANIES, ...WORKDAY_COMPANIES];
 
 // ==================== Validation ====================
 
 async function validateBoard(company: CompanyData): Promise<boolean> {
-  const url = company.atsPlatform === 'GREENHOUSE'
-    ? `https://boards-api.greenhouse.io/v1/boards/${company.slug}`
-    : `https://api.lever.co/v0/postings/${company.slug}?mode=json`;
+  let url: string;
+  let method: 'HEAD' | 'POST' = 'HEAD';
+  let body: string | undefined;
+  let headers: Record<string, string> = { 'User-Agent': 'GenzJobs/1.0' };
+
+  if (company.atsPlatform === 'GREENHOUSE') {
+    url = `https://boards-api.greenhouse.io/v1/boards/${company.slug}`;
+  } else if (company.atsPlatform === 'LEVER') {
+    url = `https://api.lever.co/v0/postings/${company.slug}?mode=json`;
+  } else if (company.atsPlatform === 'ASHBY') {
+    url = `https://api.ashbyhq.com/posting-api/job-board/${company.slug}`;
+  } else if (company.atsPlatform === 'SMARTRECRUITERS') {
+    url = `https://api.smartrecruiters.com/v1/companies/${company.slug}/postings?limit=1`;
+  } else if (company.atsPlatform === 'WORKDAY') {
+    // Workday requires POST to validate
+    const parts = company.slug.split('.');
+    if (parts.length !== 3) return false;
+    const [tenant, server, site] = parts;
+    url = `https://${tenant}.${server}.myworkdayjobs.com/wday/cxs/${tenant}/${site}/jobs`;
+    method = 'POST';
+    headers = {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      'User-Agent': 'GenzJobs/1.0',
+    };
+    body = JSON.stringify({ appliedFacets: {}, limit: 1, offset: 0 });
+  } else {
+    return false;
+  }
 
   try {
     const response = await fetch(url, {
-      method: 'HEAD',
-      headers: { 'User-Agent': 'GenzJobs/1.0' },
+      method,
+      headers,
+      body,
     });
     return response.ok;
   } catch {

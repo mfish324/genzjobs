@@ -27,7 +27,7 @@ export interface CleanupResult {
 // ==================== Constants ====================
 
 const DEFAULT_STALE_DAYS = 7;
-const ATS_SOURCES = ['greenhouse', 'lever', 'ashby', 'smartrecruiters'];
+const ATS_SOURCES = ['greenhouse', 'lever', 'ashby', 'smartrecruiters', 'workday'];
 
 // ==================== Cleanup Functions ====================
 
