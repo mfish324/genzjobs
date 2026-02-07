@@ -124,6 +124,20 @@ const WORKDAY_COMPANIES: CompanyData[] = [
   { companyName: 'Workday', atsPlatform: 'WORKDAY', slug: 'workday.wd5.Workday' },
 ];
 
+const WORKABLE_COMPANIES: CompanyData[] = [
+  // Tech & Startups
+  { companyName: 'Rokt', atsPlatform: 'WORKABLE', slug: 'rokt' },
+  { companyName: 'GroundTruth', atsPlatform: 'WORKABLE', slug: 'groundtruth' },
+  { companyName: 'NeoWork', atsPlatform: 'WORKABLE', slug: 'neowork' },
+  { companyName: 'BizForce', atsPlatform: 'WORKABLE', slug: 'bizforcenow' },
+  { companyName: 'Workable', atsPlatform: 'WORKABLE', slug: 'workable' },
+  { companyName: 'First Analysis', atsPlatform: 'WORKABLE', slug: 'first-analysis' },
+  { companyName: 'Rational 360', atsPlatform: 'WORKABLE', slug: 'rational-360' },
+  { companyName: 'grape', atsPlatform: 'WORKABLE', slug: 'grape' },
+  { companyName: 'Middlebury College', atsPlatform: 'WORKABLE', slug: 'middleburycollege' },
+  { companyName: 'Boutique Group', atsPlatform: 'WORKABLE', slug: 'boutique-group' },
+];
+
 const LEVER_COMPANIES: CompanyData[] = [
   // Tech Companies
   { companyName: 'Netflix', atsPlatform: 'LEVER', slug: 'netflix' },
@@ -152,13 +166,13 @@ const LEVER_COMPANIES: CompanyData[] = [
   { companyName: 'JetBrains', atsPlatform: 'LEVER', slug: 'jetbrains' },
 ];
 
-const ALL_COMPANIES = [...GREENHOUSE_COMPANIES, ...LEVER_COMPANIES, ...WORKDAY_COMPANIES];
+const ALL_COMPANIES = [...GREENHOUSE_COMPANIES, ...LEVER_COMPANIES, ...WORKDAY_COMPANIES, ...WORKABLE_COMPANIES];
 
 // ==================== Validation ====================
 
 async function validateBoard(company: CompanyData): Promise<boolean> {
   let url: string;
-  let method: 'HEAD' | 'POST' = 'HEAD';
+  let method: 'HEAD' | 'POST' | 'GET' = 'HEAD';
   let body: string | undefined;
   let headers: Record<string, string> = { 'User-Agent': 'GenzJobs/1.0' };
 
@@ -183,6 +197,10 @@ async function validateBoard(company: CompanyData): Promise<boolean> {
       'User-Agent': 'GenzJobs/1.0',
     };
     body = JSON.stringify({ appliedFacets: {}, limit: 1, offset: 0 });
+  } else if (company.atsPlatform === 'WORKABLE') {
+    // Workable widget API doesn't support HEAD, use GET
+    url = `https://apply.workable.com/api/v1/widget/accounts/${company.slug}`;
+    method = 'GET';
   } else {
     return false;
   }
@@ -192,6 +210,7 @@ async function validateBoard(company: CompanyData): Promise<boolean> {
       method,
       headers,
       body,
+      redirect: 'follow',
     });
     return response.ok;
   } catch {
