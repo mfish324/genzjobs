@@ -166,7 +166,16 @@ const LEVER_COMPANIES: CompanyData[] = [
   { companyName: 'JetBrains', atsPlatform: 'LEVER', slug: 'jetbrains' },
 ];
 
-const ALL_COMPANIES = [...GREENHOUSE_COMPANIES, ...LEVER_COMPANIES, ...WORKDAY_COMPANIES, ...WORKABLE_COMPANIES];
+const RECRUITEE_COMPANIES: CompanyData[] = [
+  // European Tech & Fintech
+  { companyName: 'bunq', atsPlatform: 'RECRUITEE', slug: 'bunq' },
+  { companyName: 'Personio', atsPlatform: 'RECRUITEE', slug: 'personio' },
+  { companyName: 'Applied Value', atsPlatform: 'RECRUITEE', slug: 'appliedvalue' },
+  { companyName: 'Flink', atsPlatform: 'RECRUITEE', slug: 'flink' },
+  { companyName: 'Tellent', atsPlatform: 'RECRUITEE', slug: 'tellent' },
+];
+
+const ALL_COMPANIES = [...GREENHOUSE_COMPANIES, ...LEVER_COMPANIES, ...WORKDAY_COMPANIES, ...WORKABLE_COMPANIES, ...RECRUITEE_COMPANIES];
 
 // ==================== Validation ====================
 
@@ -201,6 +210,8 @@ async function validateBoard(company: CompanyData): Promise<boolean> {
     // Workable widget API doesn't support HEAD, use GET
     url = `https://apply.workable.com/api/v1/widget/accounts/${company.slug}`;
     method = 'GET';
+  } else if (company.atsPlatform === 'RECRUITEE') {
+    url = `https://${company.slug}.recruitee.com/api/offers`;
   } else {
     return false;
   }

@@ -14,6 +14,7 @@ import { fetchAshbyJobs, getAshbyRateLimitDelay } from './ashby';
 import { fetchSmartRecruitersJobs, getSmartRecruitersRateLimitDelay } from './smartrecruiters';
 import { fetchWorkdayJobs, getWorkdayRateLimitDelay } from './workday';
 import { fetchWorkableJobs, getWorkableRateLimitDelay } from './workable';
+import { fetchRecruiteeJobs, getRecruiteeRateLimitDelay } from './recruitee';
 import { delay } from './utils';
 import type { ScrapedJobData } from './greenhouse';
 
@@ -164,6 +165,9 @@ async function scrapeCompany(
         break;
       case 'WORKABLE':
         jobs = await fetchWorkableJobs(company.slug, company.companyName);
+        break;
+      case 'RECRUITEE':
+        jobs = await fetchRecruiteeJobs(company.slug, company.companyName);
         break;
       default:
         throw new Error(`Unsupported platform: ${company.atsPlatform}`);
@@ -325,6 +329,8 @@ function getRateLimitDelay(platform: ATSPlatform): number {
       return getWorkdayRateLimitDelay();
     case 'WORKABLE':
       return getWorkableRateLimitDelay();
+    case 'RECRUITEE':
+      return getRecruiteeRateLimitDelay();
     default:
       return 2000; // Default 2s
   }

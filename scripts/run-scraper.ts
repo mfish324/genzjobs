@@ -64,10 +64,10 @@ function parseArgs(): CLIOptions {
       options.help = true;
     } else if (arg === '--platform' && args[i + 1]) {
       const platform = args[++i].toUpperCase();
-      if (platform === 'GREENHOUSE' || platform === 'LEVER' || platform === 'ASHBY' || platform === 'SMARTRECRUITERS' || platform === 'WORKDAY' || platform === 'WORKABLE') {
+      if (platform === 'GREENHOUSE' || platform === 'LEVER' || platform === 'ASHBY' || platform === 'SMARTRECRUITERS' || platform === 'WORKDAY' || platform === 'WORKABLE' || platform === 'RECRUITEE') {
         options.platform = platform;
       } else {
-        console.error(`Invalid platform: ${platform}. Use GREENHOUSE, LEVER, ASHBY, SMARTRECRUITERS, WORKDAY, or WORKABLE.`);
+        console.error(`Invalid platform: ${platform}. Use GREENHOUSE, LEVER, ASHBY, SMARTRECRUITERS, WORKDAY, WORKABLE, or RECRUITEE.`);
         process.exit(1);
       }
     } else if (arg === '--company' && args[i + 1]) {
@@ -98,7 +98,7 @@ Usage:
   npx tsx scripts/run-scraper.ts [options]
 
 Options:
-  --platform <PLATFORM>   Scrape only GREENHOUSE, LEVER, ASHBY, SMARTRECRUITERS, WORKDAY, or WORKABLE
+  --platform <PLATFORM>   Scrape only GREENHOUSE, LEVER, ASHBY, SMARTRECRUITERS, WORKDAY, WORKABLE, or RECRUITEE
   --company <slug>        Scrape a single company by slug
   --dry-run               Test run without saving to database
   --max <number>          Limit to N companies
@@ -149,7 +149,7 @@ async function main() {
     const jobCounts = await prisma.jobListing.groupBy({
       by: ['source', 'isActive'],
       where: {
-        source: { in: ['greenhouse', 'lever', 'ashby', 'smartrecruiters', 'workday', 'workable'] },
+        source: { in: ['greenhouse', 'lever', 'ashby', 'smartrecruiters', 'workday', 'workable', 'recruitee'] },
       },
       _count: true,
     });
