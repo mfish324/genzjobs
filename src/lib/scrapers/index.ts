@@ -25,6 +25,8 @@ export interface ScrapeOptions {
   companySlug?: string;
   dryRun?: boolean;
   maxCompanies?: number;
+  /** Stop processing new companies after this many ms have elapsed */
+  timeBudgetMs?: number;
   verbose?: boolean;
 }
 
@@ -98,6 +100,14 @@ export async function runATSScraper(options: ScrapeOptions = {}): Promise<Scrape
 
   // Process each company
   for (const company of companies) {
+    // Check time budget before starting a new company
+    if (options.timeBudgetMs && (Date.now() - startTime) >= options.timeBudgetMs) {
+      if (options.verbose) {
+        console.log(`Time budget of ${options.timeBudgetMs}ms reached, stopping.`);
+      }
+      break;
+    }
+
     if (options.verbose) {
       console.log(`\nScraping ${company.companyName} (${company.atsPlatform}/${company.slug})...`);
     }

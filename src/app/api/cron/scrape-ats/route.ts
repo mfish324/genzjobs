@@ -14,7 +14,7 @@ import { runATSScraper } from '@/lib/scrapers';
 import { cleanupStaleJobs } from '@/lib/scrapers/cleanup';
 
 export const runtime = 'nodejs';
-export const maxDuration = 300; // 5 minutes max for Vercel Pro
+export const maxDuration = 60; // Vercel Hobby plan limit
 
 /**
  * GET /api/cron/scrape-ats
@@ -49,18 +49,17 @@ export async function GET(request: Request) {
   try {
     console.log('Starting scheduled ATS scrape...');
 
-    // Run the scraper
+    // Run the scraper with time budget (50s to leave margin for cleanup)
     const scrapeStats = await runATSScraper({
       verbose: false,
-      // Limit to avoid timeout on Vercel
-      maxCompanies: 50,
+      timeBudgetMs: 50_000,
     });
 
     console.log(`Scrape complete: ${scrapeStats.jobsFound} jobs found, ${scrapeStats.jobsCreated} created`);
 
-    // Run cleanup
+    // Run cleanup (14 days since full rotation across all companies takes multiple days)
     const cleanupResult = await cleanupStaleJobs({
-      staleDays: 7,
+      staleDays: 14,
       verbose: false,
     });
 
