@@ -10,14 +10,12 @@
  *   --force      Re-geocode all locations even if already geocoded
  */
 
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "../src/lib/prisma";
 import {
   geocodeLocation,
   isGeocodeSuccess,
   normalizeLocation,
 } from "../src/lib/geocoding/geocode";
-
-const prisma = new PrismaClient();
 
 interface LocationStats {
   location: string;
