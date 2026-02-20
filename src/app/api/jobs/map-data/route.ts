@@ -54,7 +54,8 @@ export async function GET(request: NextRequest) {
     };
 
     if (experienceLevelParam && experienceLevelParam !== "all") {
-      where.experienceLevel = experienceLevelParam as ExperienceLevel;
+      // Convert lowercase to uppercase for enum (e.g., "entry" -> "ENTRY")
+      where.experienceLevel = experienceLevelParam.toUpperCase() as ExperienceLevel;
     }
 
     if (jobType && jobType !== "all") {
