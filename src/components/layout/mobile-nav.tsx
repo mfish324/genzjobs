@@ -6,7 +6,7 @@ import { useSession } from "next-auth/react";
 import {
   Briefcase,
   Target,
-  Compass,
+  Map,
   User,
   Zap,
 } from "lucide-react";
@@ -14,8 +14,8 @@ import { cn } from "@/lib/utils";
 
 const mobileNavItems = [
   { name: "Jobs", href: "/jobs", icon: Briefcase },
+  { name: "Map", href: "/map", icon: Map },
   { name: "Quests", href: "/quests", icon: Target },
-  { name: "Explore", href: "/resources", icon: Compass },
   { name: "Profile", href: "/profile", icon: User, requiresAuth: true },
 ];
 

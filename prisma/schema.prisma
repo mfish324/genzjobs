@@ -158,6 +158,12 @@ model JobListing {
   skills          String[] @default([])
   remote          Boolean  @default(false)
   country         String?  @default("US") // ISO country code
+
+  // Geocoding
+  latitude        Float?
+  longitude       Float?
+  geocodedAt      DateTime? // Track when geocoded for re-geocoding stale data
+
   applyUrl        String?
   companyWebsite  String?
 
@@ -198,6 +204,7 @@ model JobListing {
   @@index([skills])
   @@index([audienceTags], type: Gin) // GIN index for efficient array queries
   @@index([experienceLevel])
+  @@index([latitude, longitude]) // Geocoding index for map queries
   @@map("job_listings")
 }
 

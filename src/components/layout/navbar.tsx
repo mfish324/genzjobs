@@ -13,6 +13,7 @@ import {
   Calendar,
   BookOpen,
   Gamepad2,
+  Map,
   User,
   LogOut,
   Menu,
@@ -45,6 +46,7 @@ import { levelProgress, xpToNextLevel } from "@/lib/constants";
 
 const navigation = [
   { name: "Jobs", href: "/jobs", icon: Briefcase },
+  { name: "Map", href: "/map", icon: Map },
   { name: "Quests", href: "/quests", icon: Target },
   { name: "Rewards", href: "/rewards", icon: Gift },
   { name: "Community", href: "/community", icon: MessageSquare },
