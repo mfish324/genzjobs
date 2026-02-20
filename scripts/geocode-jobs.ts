@@ -10,12 +10,21 @@
  *   --force      Re-geocode all locations even if already geocoded
  */
 
-import { prisma } from "../src/lib/prisma";
+import { PrismaClient } from "@prisma/client";
 import {
   geocodeLocation,
   isGeocodeSuccess,
   normalizeLocation,
 } from "../src/lib/geocoding/geocode";
+
+// Create a direct Prisma client for scripts (without Neon adapter)
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: process.env.DATABASE_URL,
+    },
+  },
+});
 
 interface LocationStats {
   location: string;
