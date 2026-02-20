@@ -1,6 +1,7 @@
 // XP Constants
 export const XP_REWARDS = {
   JOB_APPLICATION: 50,
+  SAVE_JOB: 5,
   DAILY_QUEST: 25,
   WEEKLY_QUEST: 75,
   MILESTONE_QUEST: 150,
