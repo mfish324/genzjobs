@@ -10,21 +10,21 @@
  *   --force      Re-geocode all locations even if already geocoded
  */
 
+// Load environment variables from .env.local
+import { config } from "dotenv";
+config({ path: ".env.local" });
+
 import { PrismaClient } from "@prisma/client";
+import { PrismaNeon } from "@prisma/adapter-neon";
 import {
   geocodeLocation,
   isGeocodeSuccess,
   normalizeLocation,
 } from "../src/lib/geocoding/geocode";
 
-// Create a direct Prisma client for scripts (without Neon adapter)
-const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: process.env.DATABASE_URL,
-    },
-  },
-});
+// Create Prisma client with Neon adapter (required by Prisma 7 config)
+const adapter = new PrismaNeon({ connectionString: process.env.DATABASE_URL! });
+const prisma = new PrismaClient({ adapter });
 
 interface LocationStats {
   location: string;
