@@ -114,7 +114,6 @@ export function LeafletMap({ points, center, zoom, onPointClick }: LeafletMapPro
 
                 <button
                   onClick={() => {
-                    // Navigate to jobs page with location filter
                     window.location.href = `/jobs?location=${encodeURIComponent(
                       point.location
                     )}`;
