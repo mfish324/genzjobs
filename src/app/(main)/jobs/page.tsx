@@ -25,6 +25,7 @@ import {
   PanelLeftClose,
   PanelLeft,
   Bookmark,
+  Map,
 } from "lucide-react";
 import { useSession } from "next-auth/react";
 
@@ -227,6 +228,19 @@ function JobsContent() {
     return `${Math.floor(diffInDays / 30)} months ago`;
   };
 
+  const buildMapUrl = () => {
+    const params = new URLSearchParams();
+    if (search) params.set("search", search);
+    if (location) params.set("location", location);
+    if (experienceLevel && experienceLevel !== "all") params.set("experienceLevel", experienceLevel);
+    if (jobType && jobType !== "all") params.set("jobType", jobType);
+    if (category && category !== "all") params.set("category", category);
+    if (remote) params.set("remote", "true");
+    if (!usOnly) params.set("usOnly", "false");
+    const qs = params.toString();
+    return `/map${qs ? `?${qs}` : ""}`;
+  };
+
   // Facets search params (without employers to avoid circular filtering)
   const facetsSearchParams = {
     search,
@@ -383,6 +397,13 @@ function JobsContent() {
                   />
                 </div>
 
+                <Link href={buildMapUrl()} className="w-full">
+                  <Button variant="outline" className="w-full">
+                    <Map className="w-4 h-4 mr-2" />
+                    View on Map
+                  </Button>
+                </Link>
+
                 <Button onClick={clearFilters} variant="outline" className="w-full">
                   Clear Filters
                 </Button>
@@ -440,6 +461,13 @@ function JobsContent() {
             <Flag className="w-4 h-4 mr-2" />
             US Only
           </Button>
+
+          <Link href={buildMapUrl()}>
+            <Button variant="outline" size="sm">
+              <Map className="w-4 h-4 mr-2" />
+              View on Map
+            </Button>
+          </Link>
 
           {(search || location || jobType !== "all" || experienceLevel !== "all" || category !== "all" || remote || !usOnly || selectedEmployers.length > 0) && (
             <Button variant="ghost" size="sm" onClick={clearFilters}>

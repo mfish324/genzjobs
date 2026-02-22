@@ -34,6 +34,9 @@ interface MapDataResponse {
  * - jobType: string
  * - category: string
  * - remote: boolean
+ * - search: text search across title, company, description
+ * - location: contains filter on location field
+ * - usOnly: explicit boolean override for US-only filtering
  */
 export async function GET(request: NextRequest) {
   try {
@@ -45,6 +48,9 @@ export async function GET(request: NextRequest) {
     const jobType = searchParams.get("jobType");
     const category = searchParams.get("category");
     const remote = searchParams.get("remote") === "true";
+    const search = searchParams.get("search") || "";
+    const location = searchParams.get("location") || "";
+    const usOnlyParam = searchParams.get("usOnly");
 
     // Build where clause for filtering
     const where: any = {
@@ -70,10 +76,36 @@ export async function GET(request: NextRequest) {
       where.remote = true;
     }
 
-    // For US view, optionally filter to US jobs only
-    if (view === "us") {
+    // Text search across title, company, description
+    if (search) {
+      where.AND = [
+        ...(where.AND || []),
+        {
+          OR: [
+            { title: { contains: search, mode: "insensitive" } },
+            { company: { contains: search, mode: "insensitive" } },
+            { description: { contains: search, mode: "insensitive" } },
+          ],
+        },
+      ];
+    }
+
+    // Location contains filter
+    if (location) {
+      where.location = { contains: location, mode: "insensitive" };
+    }
+
+    // US-only filtering: explicit param overrides view-based default
+    if (usOnlyParam !== null) {
+      if (usOnlyParam === "true") {
+        where.country = "US";
+      }
+    } else if (view === "us") {
       where.country = "US";
     }
+
+    // Whether search/location filters are active (for threshold adjustment)
+    const hasTextFilters = !!(search || location);
 
     // Fetch jobs with coordinates
     const jobs = await prisma.jobListing.findMany({
@@ -194,8 +226,8 @@ export async function GET(request: NextRequest) {
           avgSalaryMax,
         };
       })
-      // Filter out sparse locations (< 5 jobs for cleaner visualization)
-      .filter((point) => point.count >= 5)
+      // Filter out sparse locations (lower threshold when search/location filters active)
+      .filter((point) => point.count >= (hasTextFilters ? 1 : 5))
       // Sort by count descending
       .sort((a, b) => b.count - a.count);
 
@@ -209,6 +241,9 @@ export async function GET(request: NextRequest) {
           jobType,
           category,
           remote,
+          search: search || null,
+          location: location || null,
+          usOnly: usOnlyParam,
         },
         generatedAt: new Date().toISOString(),
       },

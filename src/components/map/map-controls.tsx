@@ -1,7 +1,8 @@
 "use client";
 
-import { Globe, MapPin } from "lucide-react";
+import { Globe, MapPin, Search, Flag } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -23,6 +24,12 @@ interface MapControlsProps {
   onCategoryChange: (category: string) => void;
   remote: boolean;
   onRemoteChange: (remote: boolean) => void;
+  search: string;
+  onSearchChange: (search: string) => void;
+  location: string;
+  onLocationChange: (location: string) => void;
+  usOnly: boolean;
+  onUsOnlyChange: (usOnly: boolean) => void;
 }
 
 export function MapControls({
@@ -36,6 +43,12 @@ export function MapControls({
   onCategoryChange,
   remote,
   onRemoteChange,
+  search,
+  onSearchChange,
+  location,
+  onLocationChange,
+  usOnly,
+  onUsOnlyChange,
 }: MapControlsProps) {
   return (
     <div className="flex flex-col gap-4">
@@ -67,8 +80,30 @@ export function MapControls({
         </Button>
       </div>
 
+      {/* Search & Location */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Search jobs, companies..."
+            value={search}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <div className="relative">
+          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Location"
+            value={location}
+            onChange={(e) => onLocationChange(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+      </div>
+
       {/* Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
         {/* Experience Level */}
         <Select value={experienceLevel} onValueChange={onExperienceLevelChange}>
           <SelectTrigger>
@@ -122,6 +157,17 @@ export function MapControls({
           className={cn(remote && "gradient-bg text-white")}
         >
           {remote ? "Remote Only" : "All Locations"}
+        </Button>
+
+        {/* US Only Toggle */}
+        <Button
+          variant={usOnly ? "default" : "outline"}
+          size="default"
+          onClick={() => onUsOnlyChange(!usOnly)}
+          className={cn(usOnly && "bg-blue-500 hover:bg-blue-600 text-white")}
+        >
+          <Flag className="w-4 h-4 mr-2" />
+          {usOnly ? "US Only" : "Worldwide"}
         </Button>
       </div>
     </div>

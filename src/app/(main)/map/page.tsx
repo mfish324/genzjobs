@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback, Suspense } from "react";
+import { useState, useEffect, useCallback, useRef, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Loader2, MapPin, TrendingUp } from "lucide-react";
 import { JobDensityMap, MapPoint } from "@/components/map/job-density-map";
 import { MapControls } from "@/components/map/map-controls";
@@ -18,15 +19,63 @@ interface MapData {
 }
 
 function MapContent() {
-  const [view, setView] = useState<"us" | "world">("us");
-  const [experienceLevel, setExperienceLevel] = useState("all");
-  const [jobType, setJobType] = useState("all");
-  const [category, setCategory] = useState("all");
-  const [remote, setRemote] = useState(false);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Initialize state from URL params
+  const [view, setView] = useState<"us" | "world">(
+    (searchParams.get("view") as "us" | "world") || "us"
+  );
+  const [experienceLevel, setExperienceLevel] = useState(
+    searchParams.get("experienceLevel") || "all"
+  );
+  const [jobType, setJobType] = useState(searchParams.get("jobType") || "all");
+  const [category, setCategory] = useState(searchParams.get("category") || "all");
+  const [remote, setRemote] = useState(searchParams.get("remote") === "true");
+  const [search, setSearch] = useState(searchParams.get("search") || "");
+  const [location, setLocation] = useState(searchParams.get("location") || "");
+  const [usOnly, setUsOnly] = useState(searchParams.get("usOnly") !== "false");
+
+  // Debounced values for search/location (used in API calls)
+  const [debouncedSearch, setDebouncedSearch] = useState(search);
+  const [debouncedLocation, setDebouncedLocation] = useState(location);
 
   const [mapData, setMapData] = useState<MapData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Debounce search and location inputs
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 400);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedLocation(location), 400);
+    return () => clearTimeout(timer);
+  }, [location]);
+
+  // Sync filter state to URL
+  const isInitialMount = useRef(true);
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    const params = new URLSearchParams();
+    if (view !== "us") params.set("view", view);
+    if (experienceLevel !== "all") params.set("experienceLevel", experienceLevel);
+    if (jobType !== "all") params.set("jobType", jobType);
+    if (category !== "all") params.set("category", category);
+    if (remote) params.set("remote", "true");
+    if (debouncedSearch) params.set("search", debouncedSearch);
+    if (debouncedLocation) params.set("location", debouncedLocation);
+    if (!usOnly) params.set("usOnly", "false");
+
+    const queryString = params.toString();
+    router.replace(`/map${queryString ? `?${queryString}` : ""}`, { scroll: false });
+  }, [view, experienceLevel, jobType, category, remote, debouncedSearch, debouncedLocation, usOnly, router]);
 
   // Fetch map data
   const fetchMapData = useCallback(async () => {
@@ -54,6 +103,16 @@ function MapContent() {
         params.set("remote", "true");
       }
 
+      if (debouncedSearch) {
+        params.set("search", debouncedSearch);
+      }
+
+      if (debouncedLocation) {
+        params.set("location", debouncedLocation);
+      }
+
+      params.set("usOnly", usOnly.toString());
+
       const response = await fetch(`/api/jobs/map-data?${params}`);
 
       if (!response.ok) {
@@ -67,7 +126,7 @@ function MapContent() {
     } finally {
       setIsLoading(false);
     }
-  }, [view, experienceLevel, jobType, category, remote]);
+  }, [view, experienceLevel, jobType, category, remote, debouncedSearch, debouncedLocation, usOnly]);
 
   // Fetch on mount and when filters change
   useEffect(() => {
@@ -99,6 +158,12 @@ function MapContent() {
         onCategoryChange={setCategory}
         remote={remote}
         onRemoteChange={setRemote}
+        search={search}
+        onSearchChange={setSearch}
+        location={location}
+        onLocationChange={setLocation}
+        usOnly={usOnly}
+        onUsOnlyChange={setUsOnly}
       />
 
       {/* Stats */}
