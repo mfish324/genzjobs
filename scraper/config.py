@@ -54,6 +54,41 @@ JOB_SOURCES = {
         "url": "https://www.apprenticeship.gov/api/v1/apprenticeships",
         "type": "api",
     },
+    "greenhouse": {
+        "enabled": True,
+        "url": "https://boards-api.greenhouse.io/v1/boards",
+        "type": "ats",
+    },
+    "lever": {
+        "enabled": True,
+        "url": "https://api.lever.co/v0/postings",
+        "type": "ats",
+    },
+    "ashby": {
+        "enabled": True,
+        "url": "https://api.ashbyhq.com/posting-api/job-board",
+        "type": "ats",
+    },
+    "smartrecruiters": {
+        "enabled": True,
+        "url": "https://api.smartrecruiters.com/v1/companies",
+        "type": "ats",
+    },
+    "workable": {
+        "enabled": True,
+        "url": "https://apply.workable.com/api/v1/widget/accounts",
+        "type": "ats",
+    },
+    "recruitee": {
+        "enabled": True,
+        "url": "https://recruitee.com/api/offers",
+        "type": "ats",
+    },
+    "workday": {
+        "enabled": True,
+        "url": "https://myworkdayjobs.com",
+        "type": "ats",
+    },
 }
 
 # Keywords to filter for Gen-Z relevant jobs

@@ -7,7 +7,11 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 
 from config import SCRAPE_INTERVAL_MINUTES, JOB_SOURCES
-from scrapers import RemotiveScraper, ArbeitnowScraper, JSearchScraper, USAJobsScraper, ApprenticeshipScraper
+from scrapers import (
+    RemotiveScraper, ArbeitnowScraper, JSearchScraper, USAJobsScraper, ApprenticeshipScraper,
+    GreenhouseScraper, LeverScraper, AshbyScraper, SmartRecruitersScraper,
+    WorkableScraper, RecruiteeScraper, WorkdayScraper,
+)
 from database import db
 from models import ScrapeResult
 
@@ -72,6 +76,20 @@ class ScraperScheduler:
                     scrapers.append(USAJobsScraper())
                 if JOB_SOURCES.get("apprenticeship", {}).get("enabled"):
                     scrapers.append(ApprenticeshipScraper())
+                if JOB_SOURCES.get("greenhouse", {}).get("enabled"):
+                    scrapers.append(GreenhouseScraper())
+                if JOB_SOURCES.get("lever", {}).get("enabled"):
+                    scrapers.append(LeverScraper())
+                if JOB_SOURCES.get("ashby", {}).get("enabled"):
+                    scrapers.append(AshbyScraper())
+                if JOB_SOURCES.get("smartrecruiters", {}).get("enabled"):
+                    scrapers.append(SmartRecruitersScraper())
+                if JOB_SOURCES.get("workable", {}).get("enabled"):
+                    scrapers.append(WorkableScraper())
+                if JOB_SOURCES.get("recruitee", {}).get("enabled"):
+                    scrapers.append(RecruiteeScraper())
+                if JOB_SOURCES.get("workday", {}).get("enabled"):
+                    scrapers.append(WorkdayScraper())
 
                 # Run each scraper
                 for scraper in scrapers:
@@ -124,6 +142,20 @@ class ScraperScheduler:
             scraper = USAJobsScraper()
         elif source == "apprenticeship":
             scraper = ApprenticeshipScraper()
+        elif source == "greenhouse":
+            scraper = GreenhouseScraper()
+        elif source == "lever":
+            scraper = LeverScraper()
+        elif source == "ashby":
+            scraper = AshbyScraper()
+        elif source == "smartrecruiters":
+            scraper = SmartRecruitersScraper()
+        elif source == "workable":
+            scraper = WorkableScraper()
+        elif source == "recruitee":
+            scraper = RecruiteeScraper()
+        elif source == "workday":
+            scraper = WorkdayScraper()
         else:
             return None
 
