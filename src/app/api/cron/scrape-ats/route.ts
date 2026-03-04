@@ -49,21 +49,32 @@ export async function GET(request: Request) {
   try {
     console.log('Starting scheduled ATS scrape...');
 
-    // Run the scraper with time budget (50s to leave margin for cleanup)
+    // Run the scraper with tight limits for Vercel Hobby 60s timeout
+    // Process max 3 companies per run; full rotation happens over multiple daily runs
     const scrapeStats = await runATSScraper({
       verbose: false,
-      timeBudgetMs: 50_000,
+      timeBudgetMs: 45_000,
+      maxCompanies: 3,
     });
 
     console.log(`Scrape complete: ${scrapeStats.jobsFound} jobs found, ${scrapeStats.jobsCreated} created`);
 
-    // Run cleanup (14 days since full rotation across all companies takes multiple days)
-    const cleanupResult = await cleanupStaleJobs({
-      staleDays: 14,
-      verbose: false,
-    });
-
-    console.log(`Cleanup complete: ${cleanupResult.jobsMarkedInactive} jobs marked inactive`);
+    // Run cleanup only if enough time remains (14 days since full rotation takes multiple days)
+    let cleanupResult = { jobsMarkedInactive: 0 };
+    const elapsed = Date.now() - startTime;
+    if (elapsed < 50_000) {
+      try {
+        cleanupResult = await cleanupStaleJobs({
+          staleDays: 14,
+          verbose: false,
+        });
+        console.log(`Cleanup complete: ${cleanupResult.jobsMarkedInactive} jobs marked inactive`);
+      } catch (cleanupError) {
+        console.warn('Cleanup skipped due to time pressure:', cleanupError);
+      }
+    } else {
+      console.log('Skipping cleanup - not enough time remaining');
+    }
 
     const duration = Date.now() - startTime;
 
