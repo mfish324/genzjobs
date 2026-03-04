@@ -74,7 +74,11 @@ export async function GET(request: Request) {
       });
     }
 
-    console.log(`Found ${ungeocodedLocations.length} locations with un-geocoded jobs`);
+    const ungeocodedLocationStrings = ungeocodedLocations
+      .map((g) => g.location)
+      .filter((loc): loc is string => loc != null);
+
+    console.log(`Found ${ungeocodedLocationStrings.length} locations with un-geocoded jobs`);
 
     let copied = 0;
     let geocoded = 0;
@@ -82,45 +86,59 @@ export async function GET(request: Request) {
     const locationsToGeocode: { location: string; count: number }[] = [];
 
     // --- Pass 1: Copy coordinates from already-geocoded jobs ---
+    // Single query: get one geocoded job per location that we need
     console.log('Pass 1: Copying coordinates from existing geocoded jobs...');
 
-    for (const group of ungeocodedLocations) {
-      if (!group.location) continue;
+    const knownCoords = await prisma.jobListing.findMany({
+      where: {
+        location: { in: ungeocodedLocationStrings },
+        latitude: { not: null },
+        longitude: { not: null },
+      },
+      select: { location: true, latitude: true, longitude: true },
+      distinct: ['location'],
+    });
 
-      // Find an already-geocoded job with the same location
-      const existingGeocoded = await prisma.jobListing.findFirst({
+    // Build a lookup map: location -> { latitude, longitude }
+    const coordsByLocation = new Map<string, { latitude: number; longitude: number }>();
+    for (const job of knownCoords) {
+      if (job.location && job.latitude != null && job.longitude != null) {
+        coordsByLocation.set(job.location, {
+          latitude: job.latitude,
+          longitude: job.longitude,
+        });
+      }
+    }
+
+    console.log(`  Found existing coords for ${coordsByLocation.size} locations`);
+
+    // Bulk update: for each known location, copy coords to un-geocoded jobs
+    for (const [location, coords] of coordsByLocation) {
+      const result = await prisma.jobListing.updateMany({
         where: {
-          location: group.location,
-          latitude: { not: null },
-          longitude: { not: null },
+          location,
+          isActive: true,
+          latitude: null,
         },
-        select: { latitude: true, longitude: true },
+        data: {
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+          geocodedAt: new Date(),
+        },
       });
 
-      if (existingGeocoded && existingGeocoded.latitude != null && existingGeocoded.longitude != null) {
-        // Copy coordinates to all un-geocoded jobs at this location
-        const result = await prisma.jobListing.updateMany({
-          where: {
-            location: group.location,
-            isActive: true,
-            latitude: null,
-          },
-          data: {
-            latitude: existingGeocoded.latitude,
-            longitude: existingGeocoded.longitude,
-            geocodedAt: new Date(),
-          },
-        });
+      copied += result.count;
+    }
 
-        copied += result.count;
-        console.log(`  Copied coords to ${result.count} jobs at "${group.location}"`);
-      } else {
-        // No existing coords — need to geocode this location
+    // Identify locations that still need geocoding (no known coords)
+    for (const group of ungeocodedLocations) {
+      if (!group.location) continue;
+      if (!coordsByLocation.has(group.location)) {
         locationsToGeocode.push({ location: group.location, count: group._count.id });
       }
     }
 
-    console.log(`Pass 1 complete: ${copied} jobs updated by copying`);
+    console.log(`Pass 1 complete: ${copied} jobs updated by copying (${coordsByLocation.size} locations)`);
 
     // --- Pass 2: Geocode new locations via Nominatim ---
     console.log(`Pass 2: Geocoding ${locationsToGeocode.length} new locations...`);
