@@ -200,9 +200,9 @@ export async function retryWithBackoff<T>(
   } = {}
 ): Promise<T> {
   const {
-    maxRetries = 3,
+    maxRetries = 1,
     initialDelayMs = 1000,
-    maxDelayMs = 60000,
+    maxDelayMs = 5000,
     backoffMultiplier = 2,
   } = options;
 

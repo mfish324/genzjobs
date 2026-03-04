@@ -18,6 +18,17 @@ import { fetchRecruiteeJobs, getRecruiteeRateLimitDelay } from './recruitee';
 import { delay } from './utils';
 import type { ScrapedJobData } from './greenhouse';
 
+// ==================== Timeout Helper ====================
+
+const PER_COMPANY_TIMEOUT_MS = 10_000; // 10s max per company
+
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`Timeout after ${ms}ms: ${label}`)), ms);
+    promise.then(resolve, reject).finally(() => clearTimeout(timer));
+  });
+}
+
 // ==================== Types ====================
 
 export interface ScrapeOptions {
@@ -113,7 +124,11 @@ export async function runATSScraper(options: ScrapeOptions = {}): Promise<Scrape
     }
 
     try {
-      const result = await scrapeCompany(company, options);
+      const result = await withTimeout(
+        scrapeCompany(company, options),
+        PER_COMPANY_TIMEOUT_MS,
+        company.companyName,
+      );
 
       stats.companiesProcessed++;
       stats.jobsFound += result.jobCount;
