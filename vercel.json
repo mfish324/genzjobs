@@ -4,10 +4,6 @@
   "buildCommand": "prisma generate && next build",
   "crons": [
     {
-      "path": "/api/cron/scrape-ats",
-      "schedule": "0 6 * * *"
-    },
-    {
       "path": "/api/cron/geocode",
       "schedule": "0 */6 * * *"
     }
