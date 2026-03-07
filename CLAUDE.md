@@ -52,6 +52,7 @@ src/
 │   │   └── employer/        # Employer portal
 │   └── api/
 │       ├── admin/           # Admin endpoints (backfill, etc.)
+│       ├── cron/geocode/    # Vercel cron for geocoding jobs
 │       └── ...              # 32+ API routes
 ├── components/              # React components
 └── lib/
@@ -61,11 +62,31 @@ src/
     │   └── classifyJob.ts   # Classifies jobs by experience level
     └── queries/             # Platform-specific query helpers
         └── jobQueries.ts    # getGenZJobs(), getJobScrollJobs(), etc.
-scraper/
-├── classification.py        # Python port of classification logic
+scraper/                     # Python scraper service (Railway)
+├── main.py                  # FastAPI app entry point
+├── config.py                # Job sources, API keys, settings
+├── companies.py             # Company slug registry for ATS scrapers
 ├── database.py              # Job persistence with classification
-└── scrapers/                # Individual scraper implementations
+├── scheduler.py             # APScheduler cron (every 4 hours)
+├── classification.py        # Python port of classification logic
+├── models.py                # Pydantic models (ScrapedJob, etc.)
+└── scrapers/
+    ├── base.py              # BaseScraper (abstract)
+    ├── ats_base.py          # ATSBaseScraper (multi-company iteration)
+    ├── remotive.py          # Remotive API
+    ├── usajobs.py           # USAJobs API
+    ├── apprenticeship.py    # Apprenticeship.gov API
+    ├── jsearch.py           # JSearch API
+    ├── arbeitnow.py         # Arbeitnow API (disabled - European)
+    ├── greenhouse.py        # Greenhouse ATS (60 companies)
+    ├── lever.py             # Lever ATS (24 companies)
+    ├── ashby.py             # Ashby ATS (18 companies)
+    ├── smartrecruiters.py   # SmartRecruiters ATS (2 companies)
+    ├── workday.py           # Workday ATS (15 companies)
+    ├── workable.py          # Workable ATS (10 companies)
+    └── recruitee.py         # Recruitee ATS (5 companies)
 prisma/schema.prisma         # Database schema (20+ models)
+scripts/seed-companies.ts    # Seed CompanyATS table (86 companies)
 ```
 
 ## Job Classification System
@@ -149,8 +170,25 @@ Admin endpoints (e.g., `/api/admin/backfill-classification`):
 // Requires x-admin-key header matching ADMIN_API_KEY env var
 ```
 
+## Scraper Architecture
+
+All scrapers run as a single Python FastAPI service on Railway (every 4 hours).
+
+**Job board scrapers**: Remotive, USAJobs, Apprenticeship.gov, JSearch — pull from public job APIs.
+
+**ATS scrapers**: Greenhouse, Lever, Ashby, SmartRecruiters, Workday, Workable, Recruitee — pull directly from 134 company career pages. Company slugs defined in `scraper/companies.py` and seeded to the `company_ats` DB table via `scripts/seed-companies.ts`.
+
+**ATS scraper pattern**: All ATS scrapers extend `ATSBaseScraper` (which extends `BaseScraper`). The base class iterates over company slugs, calls `fetch_company_jobs()` per company with per-company error isolation, and auto-classifies all jobs after fetching.
+
+**Key endpoints** (FastAPI on Railway):
+- `POST /scrape` — trigger all scrapers
+- `POST /scrape/{source}` — trigger one scraper (e.g., `/scrape/greenhouse`)
+- `GET /status` — scheduler status
+- `GET /health` — health check
+
 ## Deployment
 
 - **Frontend**: Vercel (auto-deploys from git)
 - **Database**: Neon PostgreSQL (connection URLs in env)
-- **Scrapers**: Railway (scheduled every 4 hours, auto-classifies new jobs)
+- **Scrapers**: Railway (Python FastAPI, scheduled every 4 hours, auto-classifies new jobs)
+- **Vercel crons**: Geocoding only (`/api/cron/geocode` every 6 hours)
