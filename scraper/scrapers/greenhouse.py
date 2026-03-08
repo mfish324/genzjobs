@@ -64,7 +64,7 @@ class GreenhouseScraper(ATSBaseScraper):
                 pass
 
         return self.make_job(
-            external_id=str(job_id),
+            external_id=f"{slug}_{job_id}",
             title=title,
             company_name=company_name,
             description=description,

@@ -38,7 +38,7 @@ class SmartRecruitersScraper(ATSBaseScraper):
                     break
 
                 for raw_job in content:
-                    job = self._parse_job(raw_job, company_name)
+                    job = self._parse_job(raw_job, company_name, slug)
                     if job:
                         jobs.append(job)
 
@@ -51,7 +51,7 @@ class SmartRecruitersScraper(ATSBaseScraper):
 
         return jobs
 
-    def _parse_job(self, raw_job: dict, company_name: str) -> Optional[ScrapedJob]:
+    def _parse_job(self, raw_job: dict, company_name: str, slug: str) -> Optional[ScrapedJob]:
         job_id = raw_job.get("id") or raw_job.get("uuid")
         title = raw_job.get("name", "").strip()
         if not job_id or not title:
@@ -90,7 +90,7 @@ class SmartRecruitersScraper(ATSBaseScraper):
             apply_url = f"https://jobs.smartrecruiters.com/{company_name.replace(' ', '')}/{job_id}"
 
         return self.make_job(
-            external_id=str(job_id),
+            external_id=f"{slug}_{job_id}",
             title=title,
             company_name=company_name,
             description=description,

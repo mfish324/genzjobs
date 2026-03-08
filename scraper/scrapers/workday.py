@@ -163,7 +163,7 @@ class WorkdayScraper(ATSBaseScraper):
             apply_url = f"{base_url}{apply_url}"
 
         return self.make_job(
-            external_id=str(job_id),
+            external_id=f"{tenant}_{job_id}",
             title=title,
             company_name=company_name,
             description=description,
