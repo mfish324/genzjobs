@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
 import {
@@ -74,8 +74,8 @@ interface SimilarJob {
   matchReasons: string[];
 }
 
-export default function JobDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+export default function JobDetailPage() {
+  const { id } = useParams<{ id: string }>();
   const { data: session } = useSession();
   const router = useRouter();
   const [job, setJob] = useState<JobDetails | null>(null);
