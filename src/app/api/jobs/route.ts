@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { detectJobTags } from "@/lib/job-tags";
 
 export async function GET(req: NextRequest) {
   const searchParams = req.nextUrl.searchParams;
@@ -104,13 +105,21 @@ export async function GET(req: NextRequest) {
           applyUrl: true,
           publisher: true,
           difficultyLevel: true,
+          description: true,
+          benefits: true,
         },
       }),
       prisma.jobListing.count({ where }),
     ]);
 
+    // Detect tags and strip description from response
+    const jobsWithTags = jobs.map(({ description, benefits, ...job }) => ({
+      ...job,
+      tags: detectJobTags({ ...job, description, benefits }),
+    }));
+
     const response = NextResponse.json({
-      jobs,
+      jobs: jobsWithTags,
       pagination: {
         page,
         limit,

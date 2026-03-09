@@ -23,6 +23,8 @@ import { Badge } from "@/components/ui/badge";
 import { levelProgress, xpToNextLevel, calculateLevel } from "@/lib/constants";
 import { StreakDisplay } from "@/components/streak-display";
 import { BadgeDisplay } from "@/components/badge-display";
+import { XpProgressHero } from "@/components/xp-progress-hero";
+import { ReferralCard } from "@/components/referral-card";
 
 async function getDashboardData(userId: string) {
   const [user, applications, activeQuests, recentActivity] = await Promise.all([
@@ -96,32 +98,18 @@ export default async function DashboardPage() {
         <StreakDisplay />
       </div>
 
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {/* Level Card */}
-        <Card className="bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white border-0">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <Trophy className="w-8 h-8" />
-              <Badge className="bg-white/20 text-white hover:bg-white/30">
-                Level {user.level}
-              </Badge>
-            </div>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>{user.xp} XP</span>
-                <span>{xpToNextLevel(user.xp)} to next level</span>
-              </div>
-              <Progress value={levelProgress(user.xp)} className="bg-white/20" />
-            </div>
-          </CardContent>
-        </Card>
+      {/* XP Progress Hero */}
+      <div className="mb-8">
+        <XpProgressHero xp={user.xp} level={user.level} />
+      </div>
 
+      {/* Stats Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         {/* Applications Card */}
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center">
+              <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-950/50 flex items-center justify-center">
                 <Briefcase className="w-6 h-6 text-blue-500" />
               </div>
               <TrendingUp className="w-5 h-5 text-green-500" />
@@ -135,7 +123,7 @@ export default async function DashboardPage() {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-xl bg-yellow-50 flex items-center justify-center">
+              <div className="w-12 h-12 rounded-xl bg-yellow-50 dark:bg-yellow-950/50 flex items-center justify-center">
                 <Calendar className="w-6 h-6 text-yellow-500" />
               </div>
             </div>
@@ -148,7 +136,7 @@ export default async function DashboardPage() {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center">
+              <div className="w-12 h-12 rounded-xl bg-green-50 dark:bg-green-950/50 flex items-center justify-center">
                 <CheckCircle2 className="w-6 h-6 text-green-500" />
               </div>
             </div>
@@ -273,6 +261,11 @@ export default async function DashboardPage() {
             )}
           </CardContent>
         </Card>
+      </div>
+
+      {/* Referral Card */}
+      <div className="mt-8">
+        <ReferralCard />
       </div>
 
       {/* Badges Section */}

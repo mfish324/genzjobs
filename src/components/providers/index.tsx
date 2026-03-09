@@ -4,6 +4,7 @@ import { ReactNode } from "react";
 import { ThemeProvider } from "next-themes";
 import { SessionProvider } from "./session-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { LevelUpProvider } from "@/components/level-up-celebration";
 
 export function Providers({ children }: { children: ReactNode }) {
   return (
@@ -14,7 +15,9 @@ export function Providers({ children }: { children: ReactNode }) {
       disableTransitionOnChange
     >
       <SessionProvider>
-        {children}
+        <LevelUpProvider>
+          {children}
+        </LevelUpProvider>
         <Toaster position="top-right" richColors />
       </SessionProvider>
     </ThemeProvider>

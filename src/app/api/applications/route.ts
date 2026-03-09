@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { XP_REWARDS, calculateLevel } from "@/lib/constants";
 import { calculateStreakXP, getStreakMultiplier } from "@/lib/streaks";
+import { updateQuestProgress } from "@/lib/quest-progress";
 
 const applicationSchema = z.object({
   jobListingId: z.string(),
@@ -126,7 +127,65 @@ export async function POST(req: NextRequest) {
     ]);
 
     // Update quest progress (apply_jobs action)
-    await updateQuestProgress(session.user.id, "apply_jobs");
+    const completedQuests = await updateQuestProgress(session.user.id, "apply_jobs");
+
+    // Check referral qualification (first application triggers referral reward)
+    const existingAppCount = await prisma.application.count({
+      where: { userId: session.user.id },
+    });
+    if (existingAppCount === 1) {
+      // This is the user's first application (we just created it above)
+      const pendingReferral = await prisma.referral.findFirst({
+        where: { referredId: session.user.id, status: "pending" },
+      });
+
+      if (pendingReferral) {
+        const REFERRAL_XP = 200;
+        await prisma.$transaction([
+          // Award referrer
+          prisma.user.update({
+            where: { id: pendingReferral.referrerId },
+            data: { xp: { increment: REFERRAL_XP } },
+          }),
+          prisma.xpTransaction.create({
+            data: {
+              userId: pendingReferral.referrerId,
+              amount: REFERRAL_XP,
+              type: "referral",
+              description: "Referral bonus: your friend submitted their first application!",
+              referenceId: pendingReferral.id,
+              referenceType: "referral",
+            },
+          }),
+          // Award referred user
+          prisma.user.update({
+            where: { id: session.user.id },
+            data: { xp: { increment: REFERRAL_XP } },
+          }),
+          prisma.xpTransaction.create({
+            data: {
+              userId: session.user.id,
+              amount: REFERRAL_XP,
+              type: "referral",
+              description: "Referral bonus: applied to your first job!",
+              referenceId: pendingReferral.id,
+              referenceType: "referral",
+            },
+          }),
+          // Update referral status
+          prisma.referral.update({
+            where: { id: pendingReferral.id },
+            data: {
+              status: "rewarded",
+              referrerXpAwarded: REFERRAL_XP,
+              referredXpAwarded: REFERRAL_XP,
+              qualifiedAt: new Date(),
+              rewardedAt: new Date(),
+            },
+          }),
+        ]);
+      }
+    }
 
     // Check and award any new badges
     try {
@@ -144,6 +203,7 @@ export async function POST(req: NextRequest) {
       baseXP,
       streakMultiplier: multiplier,
       streakDays,
+      completedQuests,
     }, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -155,104 +215,3 @@ export async function POST(req: NextRequest) {
   }
 }
 
-async function updateQuestProgress(userId: string, action: string) {
-  // Get active quests for this action
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const weekStart = new Date(today);
-  weekStart.setDate(weekStart.getDate() - weekStart.getDay());
-
-  const quests = await prisma.quest.findMany({
-    where: {
-      action,
-      isActive: true,
-    },
-  });
-
-  for (const quest of quests) {
-    let periodStart: Date | null = null;
-
-    if (quest.type === "daily") {
-      periodStart = today;
-    } else if (quest.type === "weekly") {
-      periodStart = weekStart;
-    }
-
-    // Find or create user quest
-    const existingUserQuest = await prisma.userQuest.findFirst({
-      where: {
-        userId,
-        questId: quest.id,
-        ...(periodStart && { periodStart }),
-        isCompleted: false,
-      },
-    });
-
-    if (existingUserQuest) {
-      const newProgress = existingUserQuest.progress + 1;
-      const isCompleted = newProgress >= quest.targetCount;
-
-      await prisma.userQuest.update({
-        where: { id: existingUserQuest.id },
-        data: {
-          progress: newProgress,
-          isCompleted,
-          ...(isCompleted && { completedAt: new Date() }),
-        },
-      });
-
-      // Award XP if quest completed
-      if (isCompleted) {
-        await prisma.$transaction([
-          prisma.user.update({
-            where: { id: userId },
-            data: { xp: { increment: quest.xpReward } },
-          }),
-          prisma.xpTransaction.create({
-            data: {
-              userId,
-              amount: quest.xpReward,
-              type: "quest",
-              description: `Completed quest: ${quest.title}`,
-              referenceId: quest.id,
-              referenceType: "quest",
-            },
-          }),
-        ]);
-      }
-    } else if (quest.type !== "milestone") {
-      // Create new quest progress for daily/weekly
-      await prisma.userQuest.create({
-        data: {
-          userId,
-          questId: quest.id,
-          progress: 1,
-          periodStart,
-          isCompleted: quest.targetCount === 1,
-          ...(quest.targetCount === 1 && { completedAt: new Date() }),
-        },
-      });
-
-      // Award XP if single-target quest
-      if (quest.targetCount === 1) {
-        await prisma.$transaction([
-          prisma.user.update({
-            where: { id: userId },
-            data: { xp: { increment: quest.xpReward } },
-          }),
-          prisma.xpTransaction.create({
-            data: {
-              userId,
-              amount: quest.xpReward,
-              type: "quest",
-              description: `Completed quest: ${quest.title}`,
-              referenceId: quest.id,
-              referenceType: "quest",
-            },
-          }),
-        ]);
-      }
-    }
-  }
-}

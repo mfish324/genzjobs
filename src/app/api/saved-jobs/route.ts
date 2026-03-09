@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { updateQuestProgress } from "@/lib/quest-progress";
 
 const saveJobSchema = z.object({
   jobListingId: z.string(),
@@ -105,7 +106,10 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return NextResponse.json(savedJob, { status: 201 });
+    // Update quest progress for save_jobs action
+    const completedQuests = await updateQuestProgress(session.user.id, "save_jobs");
+
+    return NextResponse.json({ ...savedJob, completedQuests }, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.issues[0].message }, { status: 400 });

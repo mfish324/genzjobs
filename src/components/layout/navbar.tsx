@@ -42,7 +42,8 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { StreakDisplay } from "@/components/streak-display";
 import { BadgeDisplayCompact } from "@/components/badge-display";
 import { cn } from "@/lib/utils";
-import { levelProgress, xpToNextLevel } from "@/lib/constants";
+import { levelProgress, xpToNextLevel, getLevelTitle } from "@/lib/constants";
+import { motion } from "framer-motion";
 
 const navigation = [
   { name: "Jobs", href: "/jobs", icon: Briefcase },
@@ -135,7 +136,14 @@ export function Navbar() {
                       </span>
                       <span className="text-muted-foreground">{xpToNextLevel(xp)} to go</span>
                     </div>
-                    <Progress value={levelProgress(xp)} className="h-2" />
+                    <div className="h-2 w-full rounded-full bg-secondary overflow-hidden">
+                      <motion.div
+                        className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${levelProgress(xp)}%` }}
+                        transition={{ duration: 0.8, ease: "easeOut" }}
+                      />
+                    </div>
                   </div>
                 </div>
 

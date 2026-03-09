@@ -8,12 +8,13 @@ const registerSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Invalid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
+  referralCode: z.string().optional(),
 });
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { name, email, password } = registerSchema.parse(body);
+    const { name, email, password, referralCode } = registerSchema.parse(body);
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
@@ -50,6 +51,25 @@ export async function POST(req: NextRequest) {
         description: "Welcome bonus for joining GenZJobs!",
       },
     });
+
+    // Handle referral if code provided
+    if (referralCode) {
+      const referrer = await prisma.user.findUnique({
+        where: { referralCode },
+        select: { id: true },
+      });
+
+      if (referrer && referrer.id !== user.id) {
+        await prisma.referral.create({
+          data: {
+            referrerId: referrer.id,
+            referredId: user.id,
+            referralCode,
+            status: "pending",
+          },
+        });
+      }
+    }
 
     return NextResponse.json(
       {

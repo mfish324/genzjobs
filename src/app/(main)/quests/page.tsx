@@ -26,6 +26,7 @@ interface Quest {
   title: string;
   description: string;
   type: string;
+  difficulty: string;
   action: string;
   targetCount: number;
   xpReward: number;
@@ -85,6 +86,8 @@ export default function QuestsPage() {
     switch (action) {
       case "apply_jobs":
         return "📝";
+      case "save_jobs":
+        return "💾";
       case "complete_profile":
         return "👤";
       case "attend_event":
@@ -95,6 +98,8 @@ export default function QuestsPage() {
         return "💪";
       case "view_resources":
         return "📚";
+      case "daily_spin":
+        return "🎰";
       default:
         return "✨";
     }
@@ -127,7 +132,7 @@ export default function QuestsPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <Card>
           <CardContent className="p-4 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-violet-100 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-xl bg-violet-100 dark:bg-violet-950/50 flex items-center justify-center">
               <Flame className="w-6 h-6 text-violet-500" />
             </div>
             <div>
@@ -138,7 +143,7 @@ export default function QuestsPage() {
         </Card>
         <Card>
           <CardContent className="p-4 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-950/50 flex items-center justify-center">
               <Target className="w-6 h-6 text-blue-500" />
             </div>
             <div>
@@ -149,7 +154,7 @@ export default function QuestsPage() {
         </Card>
         <Card>
           <CardContent className="p-4 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-xl bg-green-100 dark:bg-green-950/50 flex items-center justify-center">
               <Calendar className="w-6 h-6 text-green-500" />
             </div>
             <div>
@@ -242,7 +247,7 @@ function QuestList({
           key={quest.id}
           className={`transition-all ${
             quest.isCompleted
-              ? "bg-green-50 border-green-200"
+              ? "bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-900"
               : "hover:border-violet-300"
           }`}
         >
@@ -250,7 +255,7 @@ function QuestList({
             <div className="flex items-start gap-4">
               <div
                 className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl ${
-                  quest.isCompleted ? "bg-green-100" : "bg-violet-100"
+                  quest.isCompleted ? "bg-green-100 dark:bg-green-950/50" : "bg-violet-100 dark:bg-violet-950/50"
                 }`}
               >
                 {quest.isCompleted ? (
@@ -266,16 +271,30 @@ function QuestList({
                     <h3 className="font-semibold">{quest.title}</h3>
                     <p className="text-sm text-muted-foreground">{quest.description}</p>
                   </div>
-                  <Badge
-                    variant={quest.isCompleted ? "default" : "outline"}
-                    className={`shrink-0 ${
-                      quest.isCompleted
-                        ? "bg-green-500"
-                        : "border-violet-500 text-violet-500"
-                    }`}
-                  >
-                    <Star className="w-3 h-3 mr-1" />+{quest.xpReward} XP
-                  </Badge>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {quest.difficulty && quest.difficulty !== "NORMAL" && (
+                      <Badge
+                        variant="outline"
+                        className={
+                          quest.difficulty === "EASY"
+                            ? "border-green-500 text-green-500 dark:border-green-400 dark:text-green-400 text-xs"
+                            : "border-orange-500 text-orange-500 dark:border-orange-400 dark:text-orange-400 text-xs"
+                        }
+                      >
+                        {quest.difficulty === "EASY" ? "Easy" : "Hard"}
+                      </Badge>
+                    )}
+                    <Badge
+                      variant={quest.isCompleted ? "default" : "outline"}
+                      className={`${
+                        quest.isCompleted
+                          ? "bg-green-500"
+                          : "border-violet-500 text-violet-500"
+                      }`}
+                    >
+                      <Star className="w-3 h-3 mr-1" />+{quest.xpReward} XP
+                    </Badge>
+                  </div>
                 </div>
 
                 <div className="mt-4">

@@ -176,7 +176,7 @@ export default function RewardsPage() {
         return (
           <div key={category} className="mb-12">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-violet-100 dark:bg-violet-950/50 flex items-center justify-center">
                 <Icon className="w-5 h-5 text-violet-500" />
               </div>
               <h2 className="text-xl font-semibold">
@@ -203,7 +203,7 @@ export default function RewardsPage() {
                   >
                     <CardContent className="p-6">
                       {reward.imageUrl && (
-                        <div className="w-full h-32 mb-4 rounded-lg overflow-hidden bg-gray-100">
+                        <div className="w-full h-32 mb-4 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
                           <img
                             src={reward.imageUrl}
                             alt={reward.title}
@@ -293,7 +293,7 @@ export default function RewardsPage() {
                 </div>
               </div>
 
-              <div className="mt-4 p-4 rounded-lg bg-violet-50 border border-violet-200">
+              <div className="mt-4 p-4 rounded-lg bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800">
                 <div className="flex justify-between text-sm">
                   <span>Your balance</span>
                   <span className="font-medium">{userXp} XP</span>
@@ -304,7 +304,7 @@ export default function RewardsPage() {
                     -{selectedReward.xpCost} XP
                   </span>
                 </div>
-                <div className="border-t border-violet-200 mt-2 pt-2 flex justify-between font-medium">
+                <div className="border-t border-violet-200 dark:border-violet-800 mt-2 pt-2 flex justify-between font-medium">
                   <span>Remaining</span>
                   <span>{userXp - selectedReward.xpCost} XP</span>
                 </div>

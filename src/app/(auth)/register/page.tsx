@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
 import { Loader2, Zap, Rocket, Star, Target } from "lucide-react";
@@ -11,8 +11,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const referralCode = searchParams.get("ref") || "";
 
   const [isLoading, setIsLoading] = useState(false);
   const [name, setName] = useState("");
@@ -39,7 +41,7 @@ export default function RegisterPage() {
       const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, password, referralCode: referralCode || undefined }),
       });
 
       const data = await response.json();
@@ -58,7 +60,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <Card className="backdrop-blur-xl bg-white/95 border-0 shadow-2xl">
+    <Card className="backdrop-blur-xl bg-white/95 dark:bg-card/95 border-0 shadow-2xl">
       <CardHeader className="space-y-1 text-center">
         <div className="flex justify-center mb-2">
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center">
@@ -164,5 +166,19 @@ export default function RegisterPage() {
         </CardFooter>
       </form>
     </Card>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={
+      <Card className="backdrop-blur-xl bg-white/95 dark:bg-card/95 border-0 shadow-2xl">
+        <CardContent className="flex justify-center py-20">
+          <Loader2 className="w-8 h-8 animate-spin text-violet-500" />
+        </CardContent>
+      </Card>
+    }>
+      <RegisterForm />
+    </Suspense>
   );
 }

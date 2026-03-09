@@ -70,6 +70,11 @@ model User {
   // Saved jobs relation
   savedJobs      SavedJob[]
 
+  // Referral system
+  referralCode   String?   @unique
+  referralsGiven Referral[] @relation("Referrer")
+  referralsReceived Referral[] @relation("Referred")
+
   @@map("users")
 }
 
@@ -318,9 +323,10 @@ model Quest {
   title       String
   description String
   type        String   // "daily", "weekly", "milestone"
+  difficulty  String   @default("NORMAL") // "EASY", "NORMAL", "HARD"
 
   // Requirements
-  action      String   // "apply_jobs", "complete_profile", "attend_event", "login", etc.
+  action      String   // "apply_jobs", "save_jobs", "complete_profile", "attend_event", "login", "daily_spin", etc.
   targetCount Int      @default(1)
 
   // Reward
@@ -876,4 +882,34 @@ model DailySpin {
 
   @@index([userId, spinDate])
   @@map("daily_spins")
+}
+
+// ==================== Referrals ====================
+
+model Referral {
+  id             String    @id @default(cuid())
+  referrerId     String
+  referredId     String
+  referralCode   String
+
+  // Status flow: pending -> qualified -> rewarded
+  status         String    @default("pending") // "pending", "qualified", "rewarded"
+
+  // XP tracking
+  referrerXpAwarded Int    @default(0)
+  referredXpAwarded Int    @default(0)
+
+  // Timestamps
+  createdAt      DateTime  @default(now())
+  qualifiedAt    DateTime?
+  rewardedAt     DateTime?
+
+  // Relations
+  referrer       User      @relation("Referrer", fields: [referrerId], references: [id], onDelete: Cascade)
+  referred       User      @relation("Referred", fields: [referredId], references: [id], onDelete: Cascade)
+
+  @@unique([referrerId, referredId])
+  @@index([referrerId, status])
+  @@index([referredId])
+  @@map("referrals")
 }

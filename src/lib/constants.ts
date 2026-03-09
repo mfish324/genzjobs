@@ -13,26 +13,70 @@ export const XP_REWARDS = {
   JAM_SESSION: 30,
 } as const;
 
-// Level calculation
-export const XP_PER_LEVEL = 100;
+// Level calculation - curved thresholds
+export const LEVEL_THRESHOLDS = [
+  0,      // Level 1
+  500,    // Level 2
+  1200,   // Level 3
+  2500,   // Level 4
+  4500,   // Level 5
+  7500,   // Level 6
+  12000,  // Level 7
+  18000,  // Level 8
+  26000,  // Level 9
+  40000,  // Level 10
+] as const;
+
+export const LEVEL_TITLES: Record<number, string> = {
+  1: "Fresh Start",
+  2: "Getting Warmed Up",
+  3: "On the Rise",
+  4: "Making Moves",
+  5: "Career Climber",
+  6: "Go-Getter",
+  7: "Industry Ready",
+  8: "Top Talent",
+  9: "Career Legend",
+  10: "Job Market Boss",
+};
 
 export function calculateLevel(xp: number): number {
-  return Math.floor(xp / XP_PER_LEVEL) + 1;
+  for (let i = LEVEL_THRESHOLDS.length - 1; i >= 0; i--) {
+    if (xp >= LEVEL_THRESHOLDS[i]) return i + 1;
+  }
+  return 1;
 }
 
 export function xpForLevel(level: number): number {
-  return (level - 1) * XP_PER_LEVEL;
+  if (level <= 1) return 0;
+  if (level > LEVEL_THRESHOLDS.length) return LEVEL_THRESHOLDS[LEVEL_THRESHOLDS.length - 1];
+  return LEVEL_THRESHOLDS[level - 1];
 }
 
 export function xpToNextLevel(xp: number): number {
   const currentLevel = calculateLevel(xp);
-  const xpForNextLevel = currentLevel * XP_PER_LEVEL;
-  return xpForNextLevel - xp;
+  if (currentLevel >= LEVEL_THRESHOLDS.length) return 0;
+  return LEVEL_THRESHOLDS[currentLevel] - xp;
 }
 
 export function levelProgress(xp: number): number {
-  const xpInCurrentLevel = xp % XP_PER_LEVEL;
-  return (xpInCurrentLevel / XP_PER_LEVEL) * 100;
+  const currentLevel = calculateLevel(xp);
+  if (currentLevel >= LEVEL_THRESHOLDS.length) return 100;
+  const currentThreshold = LEVEL_THRESHOLDS[currentLevel - 1];
+  const nextThreshold = LEVEL_THRESHOLDS[currentLevel];
+  return ((xp - currentThreshold) / (nextThreshold - currentThreshold)) * 100;
+}
+
+export function getMotivationalText(xp: number): string {
+  const progress = levelProgress(xp);
+  if (progress < 25) return "Just getting started — keep going!";
+  if (progress < 50) return "You're building momentum!";
+  if (progress < 75) return "Over halfway there — don't stop now!";
+  return "Almost there — the next level awaits!";
+}
+
+export function getLevelTitle(level: number): string {
+  return LEVEL_TITLES[level] || LEVEL_TITLES[10];
 }
 
 // Experience levels
@@ -177,11 +221,13 @@ export const QUEST_TYPES = {
 // Quest actions
 export const QUEST_ACTIONS = {
   APPLY_JOBS: "apply_jobs",
+  SAVE_JOBS: "save_jobs",
   COMPLETE_PROFILE: "complete_profile",
   ATTEND_EVENT: "attend_event",
   LOGIN: "login",
   UPDATE_SKILLS: "update_skills",
   VIEW_RESOURCES: "view_resources",
+  DAILY_SPIN: "daily_spin",
 } as const;
 
 // Event types

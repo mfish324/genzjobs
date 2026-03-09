@@ -3,6 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
+import { calculateLevel } from "./constants";
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as NextAuthOptions["adapter"],
@@ -78,7 +79,7 @@ export const authOptions: NextAuthOptions = {
 
         if (user) {
           session.user.xp = user.xp;
-          session.user.level = user.level;
+          session.user.level = calculateLevel(user.xp);
           session.user.skills = user.skills;
           session.user.experience = user.experience;
         }
