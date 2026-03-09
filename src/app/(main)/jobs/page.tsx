@@ -140,6 +140,25 @@ function JobsContent() {
     }
   }, [search, location, jobType, experienceLevel, category, remote, usOnly, selectedEmployers, page]);
 
+  // Sync filters to URL search params so they persist on back navigation
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (search) params.set("search", search);
+    if (location) params.set("location", location);
+    if (jobType && jobType !== "all") params.set("jobType", jobType);
+    if (experienceLevel && experienceLevel !== "all") params.set("experienceLevel", experienceLevel);
+    if (category && category !== "all") params.set("category", category);
+    if (remote) params.set("remote", "true");
+    if (!usOnly) params.set("usOnly", "false");
+    if (page > 1) params.set("page", page.toString());
+
+    const paramString = params.toString();
+    const currentParams = searchParams.toString();
+    if (paramString !== currentParams) {
+      router.replace(`/jobs${paramString ? `?${paramString}` : ""}`, { scroll: false });
+    }
+  }, [search, location, jobType, experienceLevel, category, remote, usOnly, page, router, searchParams]);
+
   useEffect(() => {
     fetchJobs();
   }, [fetchJobs]);

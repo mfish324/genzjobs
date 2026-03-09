@@ -212,11 +212,9 @@ export default function JobDetailPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Back button */}
-      <Button variant="ghost" asChild className="mb-6">
-        <Link href="/jobs">
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Jobs
-        </Link>
+      <Button variant="ghost" className="mb-6" onClick={() => router.back()}>
+        <ArrowLeft className="w-4 h-4 mr-2" />
+        Back to Jobs
       </Button>
 
       <div className="grid lg:grid-cols-3 gap-8">
