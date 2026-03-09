@@ -32,7 +32,7 @@ This is a **multi-platform job board system** sharing a single database:
 - **RJRP** (planned): Verified employer jobs, eliminating ghost jobs
 
 ### Tech Stack
-- **Frontend**: Next.js 14 (App Router) + TypeScript + Tailwind CSS + Radix UI
+- **Frontend**: Next.js 14 (App Router) + React 18 + TypeScript + Tailwind CSS + Radix UI
 - **Auth**: NextAuth.js with JWT strategy (`src/lib/auth.ts`)
 - **Database**: PostgreSQL (Neon serverless) via Prisma ORM
 - **AI**: Anthropic Claude for job-candidate matching (`src/lib/ai.ts`)
@@ -191,4 +191,12 @@ All scrapers run as a single Python FastAPI service on Railway (every 4 hours).
 - **Frontend**: Vercel (auto-deploys from git)
 - **Database**: Neon PostgreSQL (connection URLs in env)
 - **Scrapers**: Railway (Python FastAPI, scheduled every 4 hours, auto-classifies new jobs)
-- **Vercel crons**: Geocoding only (`/api/cron/geocode` every 6 hours)
+- **Vercel crons**: Geocoding only (`/api/cron/geocode` daily at 8am UTC)
+
+## Important Notes
+
+- **React 18** (not 19): `React.use()` does not exist. Use `useParams()` for client component route params.
+- **Vercel Hobby plan**: Crons must be once-per-day max. Multi-per-day cron schedules will silently block ALL deployments.
+- **Vercel auto-deploy**: Can break silently. If deploys stop, check `npx vercel --prod` for errors. Cron schedule issues are a common cause.
+- **ATS scraper sourceId format**: Must match legacy format `{source}_{slug}_{id}` for Greenhouse/Ashby/SmartRecruiters/Workday. Lever/Workable/Recruitee use `{source}_{id}`. Mismatch causes silent save failures.
+- **Railway scraper URL**: `https://genzjobs-production.up.railway.app`
