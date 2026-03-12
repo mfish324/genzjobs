@@ -84,6 +84,10 @@ export default function JobDetailPage() {
   const [similarJobs, setSimilarJobs] = useState<SimilarJob[]>([]);
   const [totalSimilar, setTotalSimilar] = useState(0);
   const [similarLoading, setSimilarLoading] = useState(true);
+  const [showGenZ, setShowGenZ] = useState(true);
+  const [genzDescription, setGenzDescription] = useState<string | null>(null);
+  const [genzLoading, setGenzLoading] = useState(false);
+  const [genzError, setGenzError] = useState(false);
 
   useEffect(() => {
     async function fetchJob() {
@@ -126,6 +130,33 @@ export default function JobDetailPage() {
 
     if (id) {
       fetchSimilarJobs();
+    }
+  }, [id]);
+
+  // Fetch Gen-Z description
+  useEffect(() => {
+    async function fetchGenZDescription() {
+      setGenzLoading(true);
+      setGenzError(false);
+      try {
+        const res = await fetch(`/api/jobs/${id}/genz-description`);
+        if (res.ok) {
+          const data = await res.json();
+          setGenzDescription(data.summary);
+        } else {
+          setGenzError(true);
+          setShowGenZ(false);
+        }
+      } catch {
+        setGenzError(true);
+        setShowGenZ(false);
+      } finally {
+        setGenzLoading(false);
+      }
+    }
+
+    if (id) {
+      fetchGenZDescription();
     }
   }, [id]);
 
@@ -276,21 +307,83 @@ export default function JobDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Description */}
+          {/* Description Toggle */}
           <Card>
             <CardHeader>
-              <CardTitle>About the Role</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  {showGenZ && genzDescription ? (
+                    <>
+                      <Zap className="w-5 h-5 text-yellow-500" />
+                      The Quick Summary
+                    </>
+                  ) : (
+                    "About the Role"
+                  )}
+                </CardTitle>
+                {genzDescription && (
+                  <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+                    <button
+                      onClick={() => setShowGenZ(true)}
+                      className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                        showGenZ
+                          ? "bg-violet-500 text-white shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <Zap className="w-3 h-3 inline mr-1" />
+                      Summary
+                    </button>
+                    <button
+                      onClick={() => setShowGenZ(false)}
+                      className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                        !showGenZ
+                          ? "bg-violet-500 text-white shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      The Real Deal
+                    </button>
+                  </div>
+                )}
+              </div>
+              {showGenZ && genzDescription && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  AI-powered summary — may not capture everything
+                </p>
+              )}
             </CardHeader>
             <CardContent>
-              <div
-                className="prose prose-sm max-w-none"
-                dangerouslySetInnerHTML={{ __html: job.description.replace(/\n/g, "<br>") }}
-              />
+              {showGenZ && genzLoading ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Generating summary...
+                </div>
+              ) : showGenZ && genzDescription ? (
+                <div className="space-y-4">
+                  <div
+                    className="prose prose-sm max-w-none"
+                    dangerouslySetInnerHTML={{ __html: genzDescription.replace(/\n/g, "<br>") }}
+                  />
+                  <button
+                    onClick={() => setShowGenZ(false)}
+                    className="inline-flex items-center gap-1 text-sm font-medium text-violet-600 hover:text-violet-700 transition-colors"
+                  >
+                    View the full original description
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <div
+                  className="prose prose-sm max-w-none"
+                  dangerouslySetInnerHTML={{ __html: job.description.replace(/\n/g, "<br>") }}
+                />
+              )}
             </CardContent>
           </Card>
 
-          {/* Requirements */}
-          {job.requirements && (
+          {/* Requirements - only show in "real deal" mode */}
+          {!showGenZ && job.requirements && (
             <Card>
               <CardHeader>
                 <CardTitle>Requirements</CardTitle>
@@ -304,8 +397,8 @@ export default function JobDetailPage() {
             </Card>
           )}
 
-          {/* Benefits */}
-          {job.benefits && (
+          {/* Benefits - only show in "real deal" mode */}
+          {!showGenZ && job.benefits && (
             <Card>
               <CardHeader>
                 <CardTitle>Benefits</CardTitle>

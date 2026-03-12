@@ -189,6 +189,10 @@ model JobListing {
   isRjrpVerified  Boolean  @default(false)
   rjrpEmployerId  String?  // FK for verified employers (optional)
 
+  // AI-generated Gen-Z friendly description
+  genzDescription   String?   @db.Text
+  genzDescriptionAt DateTime? // When the rewrite was generated
+
   // Status
   isActive        Boolean  @default(true)
   postedAt        DateTime @default(now())

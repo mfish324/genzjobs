@@ -510,6 +510,80 @@ function calculateResumeSimilarity(
   return Math.min(100, score);
 }
 
+export interface GenZDescription {
+  summary: string;
+  requirements: string | null;
+  benefits: string | null;
+}
+
+export async function rewriteJobForGenZ(
+  title: string,
+  company: string,
+  description: string,
+  requirements: string | null,
+  benefits: string | null,
+  skills: string[],
+  jobType: string | null,
+  experienceLevel: string | null
+): Promise<GenZDescription | null> {
+  if (!anthropic) {
+    return null;
+  }
+
+  try {
+    const prompt = `You are rewriting a job listing to be more accessible and engaging for Gen-Z job seekers (ages 18-28). Make it fun, clear, and easy to scan.
+
+JOB INFO:
+- Title: ${title}
+- Company: ${company}
+- Type: ${jobType || "Not specified"}
+- Level: ${experienceLevel || "Not specified"}
+- Skills: ${skills.join(", ") || "Not specified"}
+
+ORIGINAL DESCRIPTION:
+${description.substring(0, 3000)}
+
+${requirements ? `ORIGINAL REQUIREMENTS:\n${requirements.substring(0, 1500)}` : ""}
+
+${benefits ? `ORIGINAL BENEFITS:\n${benefits.substring(0, 1500)}` : ""}
+
+Rewrite the job listing with these rules:
+- Use bullet points and emojis to make it scannable
+- Cut the corporate jargon — use plain, conversational language
+- Keep it real — don't oversell or add info that wasn't in the original
+- Highlight what actually matters: what you'll do, what you need, what you get
+- Use section headers with emojis (e.g., "🔧 What You'll Do", "✅ What You Need", "🎁 Perks")
+- Keep the tone upbeat but authentic — not cringey
+- Be concise — shorter is better
+
+Respond in JSON format:
+{
+  "summary": "<the rewritten job description with emoji headers and bullet points>",
+  "requirements": "<rewritten requirements section or null if not provided>",
+  "benefits": "<rewritten benefits/perks section or null if not provided>"
+}`;
+
+    const response = await anthropic.messages.create({
+      model: "claude-3-haiku-20240307",
+      max_tokens: 1500,
+      messages: [{ role: "user", content: prompt }],
+    });
+
+    const content = response.content[0];
+    if (content.type === "text") {
+      const jsonMatch = content.text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        return JSON.parse(jsonMatch[0]) as GenZDescription;
+      }
+    }
+
+    return null;
+  } catch (error) {
+    console.error("Gen-Z rewrite error:", error);
+    return null;
+  }
+}
+
 function basicSimilarityScoring(
   sourceJob: SourceJob,
   candidateJobs: CandidateJob[]
