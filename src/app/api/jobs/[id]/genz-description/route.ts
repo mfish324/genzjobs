@@ -81,20 +81,41 @@ Use emoji section headers. Return ONLY a JSON object:
       );
     }
 
-    // Extract JSON from response
+    // Extract summary from response
     let text = content.text;
+    // Remove markdown code fences if present
     const fenceMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
     if (fenceMatch) {
       text = fenceMatch[1];
     }
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    let fullSummary: string;
 
-    if (jsonMatch) {
-      const parsed = JSON.parse(jsonMatch[0]);
-      fullSummary = parsed.summary || content.text;
-    } else {
-      fullSummary = content.text;
+    let fullSummary: string;
+    try {
+      // Fix control characters in JSON string values (newlines, tabs)
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const cleaned = jsonMatch[0]
+          .replace(/[\x00-\x1F\x7F]/g, (ch) => {
+            if (ch === '\n') return '\\n';
+            if (ch === '\r') return '\\r';
+            if (ch === '\t') return '\\t';
+            return '';
+          });
+        const parsed = JSON.parse(cleaned);
+        fullSummary = parsed.summary || content.text;
+      } else {
+        fullSummary = content.text;
+      }
+    } catch {
+      // If JSON parsing still fails, extract content between first { and last }
+      // and use the raw text with some cleanup
+      fullSummary = content.text
+        .replace(/^```(?:json)?\s*/m, '')
+        .replace(/```\s*$/m, '')
+        .replace(/^\s*\{\s*"summary"\s*:\s*"/m, '')
+        .replace(/"\s*\}\s*$/m, '')
+        .replace(/\\n/g, '\n')
+        .replace(/\\"/g, '"');
     }
 
     // Cache to database
