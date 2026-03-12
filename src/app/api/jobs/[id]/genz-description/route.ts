@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { rewriteJobForGenZ } from "@/lib/ai";
+import Anthropic from "@anthropic-ai/sdk";
+
+const anthropic = process.env.ANTHROPIC_API_KEY
+  ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+  : null;
 
 export async function GET(
   req: NextRequest,
@@ -38,32 +42,59 @@ export async function GET(
       });
     }
 
-    // Generate new rewrite
-    const result = await rewriteJobForGenZ(
-      job.title,
-      job.company,
-      job.description,
-      job.requirements,
-      job.benefits,
-      job.skills,
-      job.jobType,
-      job.experienceLevel
-    );
-
-    if (!result) {
+    if (!anthropic) {
       return NextResponse.json(
-        { error: "AI rewrite unavailable" },
+        { error: "AI not configured" },
         { status: 503 }
       );
     }
 
-    // Combine sections into a single cached string
-    let fullSummary = result.summary;
-    if (result.requirements) {
-      fullSummary += "\n\n" + result.requirements;
+    // Generate rewrite directly in this route for better error visibility
+    const descTrimmed = job.description.substring(0, 2000);
+    const reqTrimmed = job.requirements ? job.requirements.substring(0, 800) : "";
+    const benTrimmed = job.benefits ? job.benefits.substring(0, 800) : "";
+
+    const prompt = `Rewrite this job listing for Gen-Z (18-28). Use bullet points, emojis, plain language. Be concise and real.
+
+${job.title} at ${job.company} (${job.jobType || "N/A"}, ${job.experienceLevel || "N/A"})
+Skills: ${job.skills.slice(0, 10).join(", ") || "N/A"}
+
+DESCRIPTION:
+${descTrimmed}
+${reqTrimmed ? `\nREQUIREMENTS:\n${reqTrimmed}` : ""}
+${benTrimmed ? `\nBENEFITS:\n${benTrimmed}` : ""}
+
+Use emoji section headers. Return ONLY a JSON object:
+{"summary":"<full rewritten listing with all sections combined>"}`;
+
+    const response = await anthropic.messages.create({
+      model: "claude-3-5-haiku-20241022",
+      max_tokens: 1200,
+      messages: [{ role: "user", content: prompt }],
+    });
+
+    const content = response.content[0];
+    if (content.type !== "text") {
+      return NextResponse.json(
+        { error: "Unexpected response type" },
+        { status: 500 }
+      );
     }
-    if (result.benefits) {
-      fullSummary += "\n\n" + result.benefits;
+
+    // Extract JSON from response
+    let text = content.text;
+    const fenceMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (fenceMatch) {
+      text = fenceMatch[1];
+    }
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    let fullSummary: string;
+
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      fullSummary = parsed.summary || content.text;
+    } else {
+      fullSummary = content.text;
     }
 
     // Cache to database
@@ -81,8 +112,9 @@ export async function GET(
     });
   } catch (error) {
     console.error("Gen-Z description error:", error);
+    const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
-      { error: "Failed to generate description" },
+      { error: "Failed to generate description", detail: message },
       { status: 500 }
     );
   }
