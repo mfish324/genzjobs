@@ -549,7 +549,7 @@ Use emoji section headers. Return ONLY a JSON object:
 {"summary":"<full rewritten listing with all sections combined>"}`;
 
     const response = await anthropic.messages.create({
-      model: "claude-3-5-haiku-20241022",
+      model: "claude-3-haiku-20240307",
       max_tokens: 1200,
       messages: [{ role: "user", content: prompt }],
     });
