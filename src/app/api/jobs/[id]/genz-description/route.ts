@@ -133,9 +133,9 @@ Use emoji section headers. Return ONLY a JSON object:
     });
   } catch (error) {
     console.error("Gen-Z description error:", error);
-    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error("Detail:", error instanceof Error ? error.message : error);
     return NextResponse.json(
-      { error: "Failed to generate description", detail: message },
+      { error: "Failed to generate description" },
       { status: 500 }
     );
   }
