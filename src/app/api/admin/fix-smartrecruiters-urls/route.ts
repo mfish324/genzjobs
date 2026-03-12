@@ -22,30 +22,55 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    const dryRun = req.nextUrl.searchParams.get("dryRun") === "true";
+
     let fixed = 0;
+    const samples: { sourceId: string | null; oldUrl: string | null; newUrl: string | null }[] = [];
+
     for (const job of badJobs) {
-      // sourceId format: smartrecruiters_{slug}_{jobId}
-      // Extract the job ID (last segment after the slug)
-      const parts = (job.sourceId || "").split("_");
-      // parts: ["smartrecruiters", slug, jobId]
-      if (parts.length < 3) continue;
+      // Try to extract job ID from the existing API URL
+      // Format: https://api.smartrecruiters.com/v1/companies/{Slug}/postings/{jobId}
+      const apiMatch = (job.applyUrl || "").match(
+        /api\.smartrecruiters\.com\/v1\/companies\/([^/]+)\/postings\/(.+)/
+      );
 
-      const slug = parts[1];
-      const jobId = parts.slice(2).join("_"); // in case jobId has underscores
-      const companySlug = slug.charAt(0).toUpperCase() + slug.slice(1);
+      let newUrl: string | null = null;
 
-      const newUrl = `https://jobs.smartrecruiters.com/${companySlug}/${jobId}`;
+      if (apiMatch) {
+        const companySlug = apiMatch[1];
+        const jobId = apiMatch[2];
+        newUrl = `https://jobs.smartrecruiters.com/${companySlug}/${jobId}`;
+      } else {
+        // Fallback: try sourceId format smartrecruiters_{slug}_{jobId}
+        const parts = (job.sourceId || "").split("_");
+        if (parts.length >= 3) {
+          const slug = parts[1];
+          const jobId = parts.slice(2).join("_");
+          const companySlug = slug.charAt(0).toUpperCase() + slug.slice(1);
+          newUrl = `https://jobs.smartrecruiters.com/${companySlug}/${jobId}`;
+        }
+      }
 
-      await prisma.jobListing.update({
-        where: { id: job.id },
-        data: { applyUrl: newUrl },
-      });
+      if (samples.length < 5) {
+        samples.push({ sourceId: job.sourceId, oldUrl: job.applyUrl, newUrl });
+      }
+
+      if (!newUrl) continue;
+
+      if (!dryRun) {
+        await prisma.jobListing.update({
+          where: { id: job.id },
+          data: { applyUrl: newUrl },
+        });
+      }
       fixed++;
     }
 
     return NextResponse.json({
       found: badJobs.length,
       fixed,
+      dryRun,
+      samples,
     });
   } catch (error) {
     console.error("Fix SR URLs error:", error);
