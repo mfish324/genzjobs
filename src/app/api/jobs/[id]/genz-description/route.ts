@@ -52,7 +52,7 @@ export async function GET(
 
     if (!result) {
       return NextResponse.json(
-        { error: "AI rewrite unavailable", hasApiKey: !!process.env.ANTHROPIC_API_KEY },
+        { error: "AI rewrite unavailable" },
         { status: 503 }
       );
     }

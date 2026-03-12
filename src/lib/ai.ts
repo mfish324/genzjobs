@@ -531,41 +531,26 @@ export async function rewriteJobForGenZ(
   }
 
   try {
-    const prompt = `You are rewriting a job listing to be more accessible and engaging for Gen-Z job seekers (ages 18-28). Make it fun, clear, and easy to scan.
+    const descTrimmed = description.substring(0, 2000);
+    const reqTrimmed = requirements ? requirements.substring(0, 800) : "";
+    const benTrimmed = benefits ? benefits.substring(0, 800) : "";
 
-JOB INFO:
-- Title: ${title}
-- Company: ${company}
-- Type: ${jobType || "Not specified"}
-- Level: ${experienceLevel || "Not specified"}
-- Skills: ${skills.join(", ") || "Not specified"}
+    const prompt = `Rewrite this job listing for Gen-Z (18-28). Use bullet points, emojis, plain language. Be concise and real.
 
-ORIGINAL DESCRIPTION:
-${description.substring(0, 3000)}
+${title} at ${company} (${jobType || "N/A"}, ${experienceLevel || "N/A"})
+Skills: ${skills.slice(0, 10).join(", ") || "N/A"}
 
-${requirements ? `ORIGINAL REQUIREMENTS:\n${requirements.substring(0, 1500)}` : ""}
+DESCRIPTION:
+${descTrimmed}
+${reqTrimmed ? `\nREQUIREMENTS:\n${reqTrimmed}` : ""}
+${benTrimmed ? `\nBENEFITS:\n${benTrimmed}` : ""}
 
-${benefits ? `ORIGINAL BENEFITS:\n${benefits.substring(0, 1500)}` : ""}
-
-Rewrite the job listing with these rules:
-- Use bullet points and emojis to make it scannable
-- Cut the corporate jargon — use plain, conversational language
-- Keep it real — don't oversell or add info that wasn't in the original
-- Highlight what actually matters: what you'll do, what you need, what you get
-- Use section headers with emojis (e.g., "🔧 What You'll Do", "✅ What You Need", "🎁 Perks")
-- Keep the tone upbeat but authentic — not cringey
-- Be concise — shorter is better
-
-Respond in JSON format:
-{
-  "summary": "<the rewritten job description with emoji headers and bullet points>",
-  "requirements": "<rewritten requirements section or null if not provided>",
-  "benefits": "<rewritten benefits/perks section or null if not provided>"
-}`;
+Use emoji section headers. Return ONLY a JSON object:
+{"summary":"<full rewritten listing with all sections combined>"}`;
 
     const response = await anthropic.messages.create({
-      model: "claude-3-haiku-20240307",
-      max_tokens: 2000,
+      model: "claude-3-5-haiku-20241022",
+      max_tokens: 1200,
       messages: [{ role: "user", content: prompt }],
     });
 
@@ -579,7 +564,12 @@ Respond in JSON format:
       }
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
-        return JSON.parse(jsonMatch[0]) as GenZDescription;
+        const parsed = JSON.parse(jsonMatch[0]);
+        return {
+          summary: parsed.summary || content.text,
+          requirements: parsed.requirements || null,
+          benefits: parsed.benefits || null,
+        } as GenZDescription;
       }
       // If no JSON found, return the raw text as summary
       return {
