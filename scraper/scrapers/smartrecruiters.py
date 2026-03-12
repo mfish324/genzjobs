@@ -84,10 +84,12 @@ class SmartRecruitersScraper(ATSBaseScraper):
         type_label = type_of_employment.get("name", "") if isinstance(type_of_employment, dict) else ""
         job_type = self.normalize_job_type(type_label)
 
-        # Apply URL
-        apply_url = raw_job.get("ref", "") or raw_job.get("applyUrl", "")
-        if not apply_url:
-            apply_url = f"https://jobs.smartrecruiters.com/{company_name.replace(' ', '')}/{job_id}"
+        # Apply URL — prefer human-readable posting/apply URLs over API ref
+        apply_url = (
+            raw_job.get("applyUrl", "")
+            or raw_job.get("postingUrl", "")
+            or f"https://jobs.smartrecruiters.com/{company_name.replace(' ', '')}/{job_id}"
+        )
 
         return self.make_job(
             external_id=f"{slug}_{job_id}",
