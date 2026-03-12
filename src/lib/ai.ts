@@ -565,16 +565,28 @@ Respond in JSON format:
 
     const response = await anthropic.messages.create({
       model: "claude-3-haiku-20240307",
-      max_tokens: 1500,
+      max_tokens: 2000,
       messages: [{ role: "user", content: prompt }],
     });
 
     const content = response.content[0];
     if (content.type === "text") {
-      const jsonMatch = content.text.match(/\{[\s\S]*\}/);
+      // Try to extract JSON, handling markdown code fences
+      let text = content.text;
+      const fenceMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (fenceMatch) {
+        text = fenceMatch[1];
+      }
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         return JSON.parse(jsonMatch[0]) as GenZDescription;
       }
+      // If no JSON found, return the raw text as summary
+      return {
+        summary: content.text,
+        requirements: null,
+        benefits: null,
+      };
     }
 
     return null;
