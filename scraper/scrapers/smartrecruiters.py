@@ -4,7 +4,6 @@ from typing import List, Optional
 
 from .ats_base import ATSBaseScraper
 from models import ScrapedJob
-from companies import SMARTRECRUITERS_COMPANIES
 
 logger = logging.getLogger(__name__)
 
@@ -17,8 +16,8 @@ class SmartRecruitersScraper(ATSBaseScraper):
     Paginated. Has native experienceLevel and location.remote fields.
     """
 
-    def __init__(self):
-        super().__init__("smartrecruiters", SMARTRECRUITERS_COMPANIES)
+    def __init__(self, tiers: Optional[List[int]] = None):
+        super().__init__("smartrecruiters", tiers)
 
     async def fetch_company_jobs(self, company_name: str, slug: str) -> List[ScrapedJob]:
         jobs: List[ScrapedJob] = []

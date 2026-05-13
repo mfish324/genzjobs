@@ -1,171 +1,65 @@
 """
 Company slug registry for ATS scrapers.
-Sourced from the CompanyATS database table (seed-companies.ts).
-Each entry is (company_name, slug).
+
+Companies are loaded from the CompanyATS DB table (see prisma/schema.prisma
+and scripts/seed-companies.ts). Each row carries a `priorityTier` field:
+    1 = Priority   (fast cadence, scraped first)
+    2 = Standard   (current default cadence)
+    3 = Low        (reduced cadence, scraped last)
+
+ATS scrapers call load_companies(platform, tiers) per scrape run, so tier
+changes take effect immediately without redeploying.
 """
 
-GREENHOUSE_COMPANIES = [
-    # Tech Giants & Major Tech
-    ("Stripe", "stripe"),
-    ("Airbnb", "airbnb"),
-    ("Discord", "discord"),
-    ("Figma", "figma"),
-    ("Notion", "notion"),
-    ("Ramp", "ramp"),
-    ("Vercel", "vercel"),
-    ("Linear", "linear"),
-    ("Retool", "retool"),
-    ("Scale AI", "scaleai"),
-    ("Replit", "replit"),
-    ("Webflow", "webflow"),
-    ("Flexport", "flexport"),
-    ("Brex", "brex"),
-    ("Mercury", "mercury"),
-    ("Plaid", "plaid"),
-    ("Databricks", "databricks"),
-    ("HashiCorp", "hashicorp"),
-    ("Airtable", "airtable"),
-    ("Miro", "miro"),
-    ("Segment", "segment"),
-    ("Amplitude", "amplitude"),
-    ("LaunchDarkly", "launchdarkly"),
-    ("PagerDuty", "pagerduty"),
-    ("Asana", "asana"),
-    ("Gusto", "gusto"),
-    ("Lattice", "lattice"),
-    ("Gem", "gem"),
-    ("Gong", "gong"),
-    ("Hightouch", "hightouch"),
-    # AI/ML Companies
-    ("Anthropic", "anthropic"),
-    ("OpenAI", "openai"),
-    ("Cohere", "cohere"),
-    ("Hugging Face", "huggingface"),
-    ("Weights & Biases", "wandb"),
-    ("Runway", "runwayml"),
-    ("Character.ai", "character"),
-    ("Stability AI", "stabilityai"),
-    ("Pinecone", "pinecone"),
-    ("Anyscale", "anyscale"),
-    # Fintech
-    ("Chime", "chime"),
-    ("Robinhood", "robinhood"),
-    ("SoFi", "sofi"),
-    ("Affirm", "affirm"),
-    ("Coinbase", "coinbase"),
-    ("Carta", "carta"),
-    ("Marqeta", "marqeta"),
-    # E-commerce & Consumer
-    ("Shopify", "shopify"),
-    ("Instacart", "instacart"),
-    ("DoorDash", "doordash"),
-    ("Warby Parker", "warbyparker"),
-    ("Glossier", "glossier"),
-    ("Allbirds", "allbirds"),
-    # Health & Biotech
-    ("Oscar Health", "oscar"),
-    ("Ro", "ro"),
-    ("Tempus", "tempus"),
-    ("Cerebral", "cerebral"),
-    # Enterprise & B2B
-    ("MongoDB", "mongodb"),
-    ("Snowflake", "snowflake"),
-    ("Confluent", "confluent"),
-    ("GitLab", "gitlab"),
-    ("Datadog", "datadog"),
-    ("Snyk", "snyk"),
-]
+import logging
+from typing import List, Tuple
 
-LEVER_COMPANIES = [
-    ("Netflix", "netflix"),
-    ("Spotify", "spotify"),
-    ("Twitch", "twitch"),
-    ("Reddit", "reddit"),
-    ("Pinterest", "pinterest"),
-    ("Lyft", "lyft"),
-    ("Uber", "uber"),
-    ("Snap", "snap"),
-    ("Twitter", "twitter"),
-    ("Dropbox", "dropbox"),
-    ("Zoom", "zoom"),
-    ("Slack", "slack"),
-    ("Squarespace", "squarespace"),
-    ("Mailchimp", "mailchimp"),
-    ("HubSpot", "hubspot"),
-    ("Intercom", "intercom"),
-    ("Calendly", "calendly"),
-    ("Zapier", "zapier"),
-    ("Cloudflare", "cloudflare"),
-    ("DigitalOcean", "digitalocean"),
-    ("Postman", "postman"),
-    ("Auth0", "auth0"),
-    ("CircleCI", "circleci"),
-    ("JetBrains", "jetbrains"),
-]
+from database import db
 
-ASHBY_COMPANIES = [
-    ("Faire", "faire"),
-    ("Grammarly", "grammarly"),
-    ("Pave", "pave"),
-    ("Descript", "descript"),
-    ("Vanta", "vanta"),
-    ("Loom", "loom"),
-    ("Coda", "coda"),
-    ("Snorkel AI", "snorkelai"),
-    ("Stytch", "stytch"),
-    ("Ironclad", "ironclad"),
-    ("Typeface", "typeface"),
-    ("Navan", "navan"),
-    ("Ashby", "ashby"),
-    ("Sardine", "sardine"),
-    ("Material Security", "material-security"),
-    ("Wundergraph", "wundergraph"),
-    ("Fly.io", "fly-io"),
-    ("Railway", "railway"),
-]
+logger = logging.getLogger(__name__)
 
-SMARTRECRUITERS_COMPANIES = [
-    ("Visa", "visa"),
-    ("Equinox", "equinox"),
-]
 
-# Slug format: tenant.server.site
-# Parsed as: https://{tenant}.{server}.myworkdayjobs.com/wday/cxs/{tenant}/{site}/jobs
-WORKDAY_COMPANIES = [
-    ("Salesforce", "salesforce.wd12.External_Career_Site"),
-    ("IBM", "ibm.wd1.IBM_Careers"),
-    ("Walmart", "walmart.wd5.WalmartExternal"),
-    ("Target", "target.wd5.targetcareers"),
-    ("Bank of America", "bankofamerica.wd1.BofAExternal"),
-    ("Capital One", "capitalone.wd12.Capital_One"),
-    ("JPMorgan Chase", "jpmorganchase.wd5.JPMorganChaseExternal"),
-    ("Deloitte", "deloitte.wd1.GlobalCareers"),
-    ("Accenture", "accenture.wd3.AccentureCareers"),
-    ("EY", "ey.wd5.EY_Careers"),
-    ("PwC", "pwc.wd3.PWC_Careers"),
-    ("KPMG", "kpmgus.wd5.KPMG_Careers"),
-    ("Adobe", "adobe.wd5.external_experienced"),
-    ("ServiceNow", "servicenow.wd1.External"),
-    ("Workday", "workday.wd5.Workday"),
-]
+# Map scraper source_name -> Prisma ATSPlatform enum value
+_ATS_PLATFORM_BY_SOURCE = {
+    "greenhouse": "GREENHOUSE",
+    "lever": "LEVER",
+    "ashby": "ASHBY",
+    "smartrecruiters": "SMARTRECRUITERS",
+    "workday": "WORKDAY",
+    "workable": "WORKABLE",
+    "recruitee": "RECRUITEE",
+}
 
-WORKABLE_COMPANIES = [
-    ("Rokt", "rokt"),
-    ("GroundTruth", "groundtruth"),
-    ("NeoWork", "neowork"),
-    ("BizForce", "bizforcenow"),
-    ("Workable", "workable"),
-    ("First Analysis", "first-analysis"),
-    ("Rational 360", "rational-360"),
-    ("grape", "grape"),
-    ("Middlebury College", "middleburycollege"),
-    ("Boutique Group", "boutique-group"),
-]
 
-RECRUITEE_COMPANIES = [
-    ("bunq", "bunq"),
-    ("Personio", "personio"),
-    ("Applied Value", "appliedvalue"),
-    ("Flink", "flink"),
-    ("Tellent", "tellent"),
-]
+async def load_companies(source_name: str, tiers: List[int]) -> List[Tuple[str, str, str]]:
+    """
+    Load (id, companyName, slug) triples from CompanyATS for the given ATS source
+    and tier filter. Results are ordered by priorityTier ASC then companyName
+    ASC, so Tier 1 entries appear first. The `id` is the CompanyATS row's primary
+    key — scrapers attach it to each ScrapedJob so JobListing carries a real FK
+    back to CompanyATS for downstream HAS scoring.
+    """
+    platform = _ATS_PLATFORM_BY_SOURCE.get(source_name)
+    if not platform:
+        logger.error(f"Unknown ATS source_name '{source_name}'")
+        return []
+
+    if not db.pool:
+        logger.error("Database pool not initialized; cannot load companies")
+        return []
+
+    async with db.pool.acquire() as conn:
+        rows = await conn.fetch(
+            '''
+            SELECT id, "companyName", slug
+            FROM company_ats
+            WHERE "atsPlatform" = $1::"ATSPlatform"
+              AND "isActive" = true
+              AND "priorityTier" = ANY($2::int[])
+            ORDER BY "priorityTier" ASC, "companyName" ASC
+            ''',
+            platform,
+            tiers,
+        )
+
+    return [(r["id"], r["companyName"], r["slug"]) for r in rows]

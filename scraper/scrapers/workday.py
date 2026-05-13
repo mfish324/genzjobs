@@ -5,7 +5,6 @@ from datetime import datetime
 
 from .ats_base import ATSBaseScraper
 from models import ScrapedJob
-from companies import WORKDAY_COMPANIES
 from config import MAX_JOBS_PER_SOURCE
 
 logger = logging.getLogger(__name__)
@@ -20,8 +19,8 @@ class WorkdayScraper(ATSBaseScraper):
     Pagination via offset/limit in POST body. Per-job detail fetches for full descriptions.
     """
 
-    def __init__(self):
-        super().__init__("workday", WORKDAY_COMPANIES)
+    def __init__(self, tiers: Optional[List[int]] = None):
+        super().__init__("workday", tiers)
 
     def _parse_slug(self, slug: str):
         """Parse tenant.server.site slug into components."""

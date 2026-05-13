@@ -5,7 +5,6 @@ from datetime import datetime
 
 from .ats_base import ATSBaseScraper
 from models import ScrapedJob
-from companies import GREENHOUSE_COMPANIES
 
 logger = logging.getLogger(__name__)
 
@@ -16,8 +15,8 @@ class GreenhouseScraper(ATSBaseScraper):
     Returns all jobs in a single request (no pagination needed).
     """
 
-    def __init__(self):
-        super().__init__("greenhouse", GREENHOUSE_COMPANIES)
+    def __init__(self, tiers: Optional[List[int]] = None):
+        super().__init__("greenhouse", tiers)
 
     async def fetch_company_jobs(self, company_name: str, slug: str) -> List[ScrapedJob]:
         jobs: List[ScrapedJob] = []

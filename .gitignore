@@ -34,9 +34,12 @@ yarn-error.log*
 
 # scraper
 scraper/venv/
-scraper/__pycache__/
-scraper/*.pyc
 scraper/.env
+
+# python
+__pycache__/
+*.pyc
+*.pyo
 
 # typescript
 *.tsbuildinfo

@@ -5,7 +5,6 @@ from datetime import datetime
 
 from .ats_base import ATSBaseScraper
 from models import ScrapedJob
-from companies import ASHBY_COMPANIES
 
 logger = logging.getLogger(__name__)
 
@@ -16,8 +15,8 @@ class AshbyScraper(ATSBaseScraper):
     Returns {jobs: [...]} with descriptionPlain, isRemote, compensation.
     """
 
-    def __init__(self):
-        super().__init__("ashby", ASHBY_COMPANIES)
+    def __init__(self, tiers: Optional[List[int]] = None):
+        super().__init__("ashby", tiers)
 
     async def fetch_company_jobs(self, company_name: str, slug: str) -> List[ScrapedJob]:
         jobs: List[ScrapedJob] = []

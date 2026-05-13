@@ -7,6 +7,7 @@ import httpx
 from bs4 import BeautifulSoup
 
 from .base import BaseScraper
+from companies import load_companies
 from models import ScrapedJob, JobCategory
 from config import MAX_JOBS_PER_SOURCE, TECH_SKILLS
 
@@ -14,20 +15,35 @@ logger = logging.getLogger(__name__)
 
 
 class ATSBaseScraper(BaseScraper):
-    """Base class for ATS scrapers that iterate over multiple company boards."""
+    """Base class for ATS scrapers that iterate over multiple company boards.
 
-    def __init__(self, source_name: str, companies: List[Tuple[str, str]]):
+    Companies are loaded from CompanyATS DB at scrape time, filtered by `tiers`.
+    Default `tiers=None` means "all tiers" (used for manual /scrape triggers).
+    """
+
+    def __init__(self, source_name: str, tiers: Optional[List[int]] = None):
         super().__init__(source_name)
-        self.companies = companies
+        self.tiers = tiers if tiers is not None else [1, 2, 3]
+        self.companies: List[Tuple[str, str, str]] = []
+        # CompanyATS.id of the company currently being scraped. Set by fetch_jobs
+        # before each fetch_company_jobs call so make_job() can attach it.
+        self._current_company_ats_id: Optional[str] = None
 
     async def fetch_jobs(self) -> List[ScrapedJob]:
         all_jobs: List[ScrapedJob] = []
 
-        for company_name, slug in self.companies:
+        self.companies = await load_companies(self.source_name, self.tiers)
+        logger.info(
+            f"[{self.source_name}] Loaded {len(self.companies)} companies "
+            f"for tiers={self.tiers}"
+        )
+
+        for company_ats_id, company_name, slug in self.companies:
             if len(all_jobs) >= MAX_JOBS_PER_SOURCE:
                 logger.info(f"[{self.source_name}] Hit max jobs limit ({MAX_JOBS_PER_SOURCE}), stopping")
                 break
 
+            self._current_company_ats_id = company_ats_id
             try:
                 jobs = await self.fetch_company_jobs(company_name, slug)
                 all_jobs.extend(jobs)
@@ -39,6 +55,8 @@ class ATSBaseScraper(BaseScraper):
                     logger.error(f"[{self.source_name}] {company_name} ({slug}): HTTP {e.response.status_code}")
             except Exception as e:
                 logger.error(f"[{self.source_name}] {company_name} ({slug}): {e}")
+            finally:
+                self._current_company_ats_id = None
 
             await self.rate_limit()
 
@@ -130,4 +148,5 @@ class ATSBaseScraper(BaseScraper):
             country="US",
             apply_url=apply_url,
             posted_at=posted_at,
+            company_ats_id=self._current_company_ats_id,
         )

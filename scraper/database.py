@@ -75,7 +75,9 @@ class Database:
                     )
 
                     if existing:
-                        # Update existing job
+                        # Update existing job. Only overwrite companyAtsId when we
+                        # have one (don't null out backfilled IDs on a re-scrape
+                        # that happens to come from a non-ATS source).
                         await conn.execute(
                             '''
                             UPDATE "job_listings"
@@ -95,7 +97,8 @@ class Database:
                                 country = $16,
                                 "experienceLevel" = $17,
                                 "audienceTags" = $18,
-                                "classificationConfidence" = $19
+                                "classificationConfidence" = $19,
+                                "companyAtsId" = COALESCE($20, "companyAtsId")
                             WHERE source = $1 AND "sourceId" = $13
                             ''',
                             job.source,
@@ -117,6 +120,7 @@ class Database:
                             job.classified_level.value if job.classified_level else None,
                             job.audience_tags,
                             job.classification_confidence,
+                            job.company_ats_id,
                         )
                         updated += 1
                     else:
@@ -128,13 +132,13 @@ class Database:
                                 location, "jobType", "experienceLevel", category, description,
                                 "salaryMin", "salaryMax", "salaryCurrency", skills,
                                 remote, country, "applyUrl", publisher, "postedAt", "createdAt", "updatedAt",
-                                "audienceTags", "classificationConfidence"
+                                "audienceTags", "classificationConfidence", "companyAtsId"
                             ) VALUES (
                                 gen_random_uuid(), $1, $2, $3, $4, $5,
                                 $6, $7, $8, $9, $10,
                                 $11, $12, $13, $14,
                                 $15, $16, $17, $18, $19, $20, $21,
-                                $22, $23
+                                $22, $23, $24
                             )
                             ''',
                             job.external_id,
@@ -160,6 +164,7 @@ class Database:
                             datetime.utcnow(),
                             job.audience_tags,
                             job.classification_confidence,
+                            job.company_ats_id,
                         )
                         added += 1
 

@@ -138,7 +138,17 @@ experienceLevel       ExperienceLevel?  // ENTRY, MID, SENIOR, EXECUTIVE
 audienceTags          String[]          // ['genz', 'mid_career', 'senior', 'executive']
 classificationConfidence Float?         // 0-1 confidence score
 isRjrpVerified        Boolean           // Verified employer badge
+companyAtsId          String?           // FK -> CompanyATS for ATS-sourced jobs
+companyAts            CompanyATS?       // Relation; read .industryCategory, etc.
 ```
+
+## Industry Category (CompanyATS)
+
+`CompanyATS.industryCategory` is a nullable `IndustryCategory` enum. RJRP's HAS scorer reads it via `JobListing.companyAts.industryCategory` to pick a weight profile. Null → default profile.
+
+Enum values: `TECHNOLOGY`, `FINANCE_AND_BANKING`, `HEALTHCARE`, `CONSULTING`, `AEROSPACE_AND_DEFENSE`, `GOVERNMENT`, `RETAIL_AND_ECOMMERCE`, `MEDIA_AND_ENTERTAINMENT`, `OTHER`.
+
+Tag rows directly in Prisma Studio or via a seed-data update. We do not infer industry — untagged rows stay null and use default scoring.
 
 ## Key Data Flows
 
@@ -192,6 +202,78 @@ All scrapers run as a single Python FastAPI service on Railway (every 4 hours).
 - **Database**: Neon PostgreSQL (connection URLs in env)
 - **Scrapers**: Railway (Python FastAPI, scheduled every 4 hours, auto-classifies new jobs)
 - **Vercel crons**: Geocoding only (`/api/cron/geocode` daily at 8am UTC)
+
+## Priority Tier System
+
+Every `CompanyATS` row carries a `priorityTier` field that controls scrape cadence and order:
+
+| Tier | Meaning   | Default cadence            | Use case |
+|------|-----------|----------------------------|----------|
+| 1    | Priority  | `TIER1_SCRAPE_INTERVAL_MINUTES` (60m) | Tech employers core audience cares about |
+| 2    | Standard  | `SCRAPE_INTERVAL_MINUTES` (240m / 4h) | Current default — no behavior change |
+| 3    | Low       | `TIER3_SCRAPE_INTERVAL_MINUTES` (1440m / 24h) | On platform but not in focus |
+
+New `CompanyATS` rows default to tier 2. Tier 1 rows are scraped first within their run (rows are returned ordered by `priorityTier ASC`).
+
+### Scheduler behavior
+
+`scraper/scheduler.py` runs **three independent jobs**:
+- `scrape_tier1` — every 60m, ATS scrapers with `tiers=[1]`
+- `scrape_standard` — every 240m, ATS scrapers with `tiers=[2]` **plus** non-ATS API scrapers (Remotive, JSearch, USAJobs, Apprenticeship, Arbeitnow)
+- `scrape_tier3` — every 1440m, ATS scrapers with `tiers=[3]`
+
+Manual `POST /scrape` still scrapes everything (all tiers, all sources) for backwards compat.
+
+### Managing tiers
+
+ATS scrapers read companies from the `CompanyATS` table at scrape time (not from hardcoded lists), so tier changes take effect on the next run without redeploying Railway.
+
+```bash
+# Single company
+npx tsx scripts/set-employer-tier.ts --tier 1 --name "Anthropic"
+
+# Bulk (comma-separated)
+npx tsx scripts/set-employer-tier.ts --tier 2 --names "Anthropic,OpenAI,Stripe"
+
+# Bulk (text file, one name per line, # for comments)
+npx tsx scripts/set-employer-tier.ts --tier 1 --file path/to/list.txt
+
+# Direct CompanyATS.id
+npx tsx scripts/set-employer-tier.ts --tier 3 --id <cuid>
+
+# Bulk-promote to Tier 1 (writes unmatched names to scripts/missing-tier1-companies.txt)
+npx tsx scripts/import-tier1-employers.ts --file path/to/tier1.txt
+```
+
+If `import-tier1-employers` reports missing names, add their ATS platform + slug to `scripts/seed-companies.ts`, run `npx tsx scripts/seed-companies.ts`, then re-run the import. Stub rows are **not** created — without a slug they can't be scraped.
+
+### Admin / inspection
+
+Use Prisma Studio for ad-hoc viewing and editing:
+
+```bash
+npx prisma studio
+```
+
+The `CompanyATS` table exposes `priorityTier` and `industryCategory` as inline-editable columns.
+
+### Backfilling companyAtsId on JobListing
+
+ATS scrapers now stamp `JobListing.companyAtsId` at insert time so downstream consumers (RJRP HAS scorer) can read company-level signals via the relation. To backfill existing rows:
+
+```bash
+# Dry run — prints per-source resolution stats
+npx tsx scripts/backfill-company-ats-id.ts
+
+# Apply
+npx tsx scripts/backfill-company-ats-id.ts --apply
+```
+
+Resolution: slug parsed from `sourceId` for Greenhouse/Ashby/SmartRecruiters/Workday, falling back to case-insensitive `company` name match. Lever/Workable/Recruitee resolve by name only (no slug in sourceId). Idempotent — only touches rows with `companyAtsId IS NULL`.
+
+### Important: reseed before deploying the refactor
+
+The old `scraper/companies.py` used hardcoded Python lists. The new version reads from `CompanyATS` directly. If the DB and the old hardcoded lists have diverged (e.g., a company was added to `companies.py` but never to `seed-companies.ts`), the scraper will silently stop scraping it. Run `npx tsx scripts/seed-companies.ts` once before deploying this change to make sure the DB has every entry the hardcoded lists had.
 
 ## Important Notes
 

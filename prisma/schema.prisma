@@ -138,6 +138,20 @@ enum ATSPlatform {
   RECRUITEE
 }
 
+// Industry category for a CompanyATS row. Read by RJRP's HAS scorer to
+// select a weight profile. Null = untagged → use default weights.
+enum IndustryCategory {
+  TECHNOLOGY
+  FINANCE_AND_BANKING
+  HEALTHCARE
+  CONSULTING
+  AEROSPACE_AND_DEFENSE
+  GOVERNMENT
+  RETAIL_AND_ECOMMERCE
+  MEDIA_AND_ENTERTAINMENT
+  OTHER
+}
+
 model JobListing {
   id              String   @id @default(cuid())
 
@@ -178,6 +192,12 @@ model JobListing {
   sourceUrl       String?  // Original URL
   publisher       String?  // Original job board (LinkedIn, Indeed, etc.)
 
+  // ATS attribution — set by scrapers at insert time so RJRP/HAS can read
+  // company-level signals (industry, hiring velocity, repost detection)
+  // via a real relation. Null for non-ATS sources (Remotive, JSearch, USAJobs, etc.).
+  companyAtsId    String?
+  companyAts      CompanyATS? @relation(fields: [companyAtsId], references: [id], onDelete: SetNull)
+
   // XP calculation
   difficultyLevel Int      @default(1) // 1-5, affects XP reward
 
@@ -214,6 +234,7 @@ model JobListing {
   @@index([audienceTags], type: Gin) // GIN index for efficient array queries
   @@index([experienceLevel])
   @@index([latitude, longitude]) // Geocoding index for map queries
+  @@index([companyAtsId])
   @@map("job_listings")
 }
 
@@ -610,20 +631,27 @@ model Company {
 
 // Track ATS integrations for company career pages
 model CompanyATS {
-  id              String      @id @default(cuid())
-  companyName     String
-  atsPlatform     ATSPlatform
-  slug            String      // ATS-specific identifier (e.g., "stripe" for boards.greenhouse.io/stripe)
-  boardUrl        String?     // Full URL to career page (optional, for reference)
-  isActive        Boolean     @default(true)
-  lastScrapedAt   DateTime?
-  lastJobCount    Int?
-  scrapeFailures  Int         @default(0)
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  id                String            @id @default(cuid())
+  companyName       String
+  atsPlatform       ATSPlatform
+  slug              String            // ATS-specific identifier (e.g., "stripe" for boards.greenhouse.io/stripe)
+  boardUrl          String?           // Full URL to career page (optional, for reference)
+  isActive          Boolean           @default(true)
+  priorityTier      Int               @default(2)  // 1=priority (tech focus, fast cadence), 2=standard (4h), 3=low (24h)
+  industryCategory  IndustryCategory? // Drives RJRP HAS weight profile selection; null = default profile
+  lastScrapedAt     DateTime?
+  lastJobCount      Int?
+  scrapeFailures    Int               @default(0)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  // Relations
+  jobListings       JobListing[]
 
   @@unique([atsPlatform, slug])
   @@index([isActive, atsPlatform])
+  @@index([priorityTier, isActive, atsPlatform])
+  @@index([industryCategory])
   @@map("company_ats")
 }
 

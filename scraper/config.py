@@ -11,9 +11,11 @@ load_dotenv(env_path)
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/genzjobs")
 
 # Scraper settings
-# Run every 4 hours (6x/day) instead of hourly (24x/day) to reduce API costs
-# 35 queries × 6 runs = 210 API calls/day (down from 840-1680)
-SCRAPE_INTERVAL_MINUTES = int(os.getenv("SCRAPE_INTERVAL_MINUTES", "240"))
+# Per-tier intervals for the priority tier system (see CompanyATS.priorityTier).
+# Tier 1 (priority) runs fast; Tier 2 (standard) is the historical cadence; Tier 3 (low) runs slow.
+TIER1_SCRAPE_INTERVAL_MINUTES = int(os.getenv("TIER1_SCRAPE_INTERVAL_MINUTES", "60"))    # 1h
+SCRAPE_INTERVAL_MINUTES = int(os.getenv("SCRAPE_INTERVAL_MINUTES", "240"))               # 4h (Tier 2 + non-ATS APIs)
+TIER3_SCRAPE_INTERVAL_MINUTES = int(os.getenv("TIER3_SCRAPE_INTERVAL_MINUTES", "1440"))  # 24h
 MAX_JOBS_PER_SOURCE = int(os.getenv("MAX_JOBS_PER_SOURCE", "2000"))
 REQUEST_DELAY_SECONDS = float(os.getenv("REQUEST_DELAY_SECONDS", "0.25"))  # 4 req/sec (under 5/sec limit)
 

@@ -64,6 +64,9 @@ class ScrapedJob(BaseModel):
     posted_at: Optional[datetime] = None
     scraped_at: datetime = Field(default_factory=datetime.utcnow)
 
+    # FK to CompanyATS for ATS-sourced jobs (None for non-ATS sources)
+    company_ats_id: Optional[str] = None
+
     # Classification fields (populated by classifier)
     classified_level: Optional[ClassifiedExperienceLevel] = None
     audience_tags: List[str] = Field(default_factory=list)  # ['genz', 'mid_career', 'senior', 'executive']

@@ -5,7 +5,6 @@ from datetime import datetime
 
 from .ats_base import ATSBaseScraper
 from models import ScrapedJob
-from companies import WORKABLE_COMPANIES
 
 logger = logging.getLogger(__name__)
 
@@ -16,8 +15,8 @@ class WorkableScraper(ATSBaseScraper):
     Single request returns all jobs with descriptions.
     """
 
-    def __init__(self):
-        super().__init__("workable", WORKABLE_COMPANIES)
+    def __init__(self, tiers: Optional[List[int]] = None):
+        super().__init__("workable", tiers)
 
     async def fetch_company_jobs(self, company_name: str, slug: str) -> List[ScrapedJob]:
         jobs: List[ScrapedJob] = []
