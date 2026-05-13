@@ -1,7 +1,7 @@
 import logging
 import ssl
-from typing import List, Tuple
-from datetime import datetime
+from typing import List, Optional, Tuple
+from datetime import datetime, timezone
 import asyncpg
 from contextlib import asynccontextmanager
 
@@ -9,6 +9,20 @@ from config import DATABASE_URL
 from models import ScrapedJob
 
 logger = logging.getLogger(__name__)
+
+
+def _to_naive_utc(dt: Optional[datetime]) -> Optional[datetime]:
+    """Normalize a datetime to naive UTC for TIMESTAMP (no-TZ) columns.
+
+    Scrapers parsing ISO strings with `replace("Z", "+00:00")` produce
+    tz-aware values, which asyncpg rejects against a TIMESTAMP column.
+    Pass any datetime through this before binding to a TIMESTAMP param.
+    """
+    if dt is None:
+        return None
+    if dt.tzinfo is not None:
+        dt = dt.astimezone(timezone.utc).replace(tzinfo=None)
+    return dt
 
 
 class Database:
@@ -67,6 +81,9 @@ class Database:
         async with self.pool.acquire() as conn:
             for job in jobs:
                 try:
+                    # Normalize tz-aware datetimes to naive UTC for TIMESTAMP columns
+                    posted_at = _to_naive_utc(job.posted_at)
+
                     # Check if job already exists by source + sourceId
                     existing = await conn.fetchval(
                         'SELECT id FROM "job_listings" WHERE source = $1 AND "sourceId" = $2',
@@ -159,7 +176,7 @@ class Database:
                             job.country,
                             job.apply_url,
                             job.publisher,
-                            job.posted_at or datetime.utcnow(),
+                            posted_at or datetime.utcnow(),
                             datetime.utcnow(),
                             datetime.utcnow(),
                             job.audience_tags,
