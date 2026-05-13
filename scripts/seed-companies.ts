@@ -102,6 +102,13 @@ const GREENHOUSE_COMPANIES: CompanyData[] = [
   { companyName: 'GitLab', atsPlatform: 'GREENHOUSE', slug: 'gitlab' },
   { companyName: 'Datadog', atsPlatform: 'GREENHOUSE', slug: 'datadog' },
   { companyName: 'Snyk', atsPlatform: 'GREENHOUSE', slug: 'snyk' },
+
+  // Tier 1 additions (added 2026-05-13 during tier1 import)
+  { companyName: 'Twilio', atsPlatform: 'GREENHOUSE', slug: 'twilio' },
+  { companyName: 'Elastic', atsPlatform: 'GREENHOUSE', slug: 'elastic' },
+  { companyName: 'Disney', atsPlatform: 'GREENHOUSE', slug: 'disney' },
+  { companyName: 'Block', atsPlatform: 'GREENHOUSE', slug: 'block' },
+  { companyName: 'Anduril', atsPlatform: 'GREENHOUSE', slug: 'andurilindustries' },
 ];
 
 const WORKDAY_COMPANIES: CompanyData[] = [
@@ -122,6 +129,9 @@ const WORKDAY_COMPANIES: CompanyData[] = [
   { companyName: 'Adobe', atsPlatform: 'WORKDAY', slug: 'adobe.wd5.external_experienced' },
   { companyName: 'ServiceNow', atsPlatform: 'WORKDAY', slug: 'servicenow.wd1.External' },
   { companyName: 'Workday', atsPlatform: 'WORKDAY', slug: 'workday.wd5.Workday' },
+
+  // Tier 1 additions (added 2026-05-13 during tier1 import)
+  { companyName: 'Home Depot', atsPlatform: 'WORKDAY', slug: 'homedepot.wd5.CareerDepot' },
 ];
 
 const WORKABLE_COMPANIES: CompanyData[] = [
@@ -164,6 +174,10 @@ const LEVER_COMPANIES: CompanyData[] = [
   { companyName: 'Auth0', atsPlatform: 'LEVER', slug: 'auth0' },
   { companyName: 'CircleCI', atsPlatform: 'LEVER', slug: 'circleci' },
   { companyName: 'JetBrains', atsPlatform: 'LEVER', slug: 'jetbrains' },
+
+  // Tier 1 additions (added 2026-05-13 during tier1 import)
+  { companyName: 'Atlassian', atsPlatform: 'LEVER', slug: 'atlassian' },
+  { companyName: 'Palantir', atsPlatform: 'LEVER', slug: 'palantir' },
 ];
 
 const RECRUITEE_COMPANIES: CompanyData[] = [

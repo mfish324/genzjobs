@@ -1,0 +1,36 @@
+# Companies from tier1-employers.txt not found in CompanyATS.
+# These can't be scraped until we know their ATS platform + slug.
+#
+# To onboard:
+#   1. Edit scripts/seed-companies.ts to add ATS platform + slug for each
+#   2. Run: npx tsx scripts/seed-companies.ts
+#   3. Re-run: npx tsx scripts/import-tier1-employers.ts --file tier1-employers.txt
+#
+# Generated: 2026-05-13T17:41:01.222Z
+Google
+Amazon
+Meta
+Apple
+Microsoft
+Nvidia
+Oracle
+Cisco
+Palo Alto Networks
+CrowdStrike
+Intuit
+PayPal
+Splunk
+VMware
+Dell Technologies
+HPE
+Qualcomm
+AMD
+Intel
+Rippling
+Goldman Sachs
+McKinsey
+Nike
+Lockheed Martin
+Raytheon
+Northrop Grumman
+Booz Allen Hamilton

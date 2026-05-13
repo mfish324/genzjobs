@@ -1,0 +1,164 @@
+# Tier 1 employer list (75 companies)
+# Format: one company name per line. # = comment. Case-insensitive matching.
+# URLs preserved as comments above each name to aid follow-up onboarding.
+
+## Tier 1A: FAANG (7)
+# https://www.google.com/about/careers/
+Google
+# https://www.amazon.jobs/
+Amazon
+# https://www.metacareers.com/
+Meta
+# https://jobs.apple.com/
+Apple
+# https://careers.microsoft.com/
+Microsoft
+# https://jobs.netflix.com/
+Netflix
+# https://www.nvidia.com/en-us/about-nvidia/careers/
+Nvidia
+
+## Tier 1B: Enterprise / Established Tech (31)
+# https://careers.salesforce.com/
+Salesforce
+# https://careers.adobe.com/
+Adobe
+# https://www.oracle.com/careers/
+Oracle
+# https://jobs.cisco.com/
+Cisco
+# https://www.ibm.com/careers/
+IBM
+# https://careers.servicenow.com/
+ServiceNow
+# https://www.workday.com/en-us/company/careers.html
+Workday
+# https://careers.snowflake.com/
+Snowflake
+# https://jobs.paloaltonetworks.com/
+Palo Alto Networks
+# https://www.crowdstrike.com/careers/
+CrowdStrike
+# https://www.intuit.com/careers/
+Intuit
+# https://www.uber.com/us/en/careers/
+Uber
+# https://www.lyft.com/careers
+Lyft
+# https://careers.airbnb.com/
+Airbnb
+# https://careers.doordash.com/
+DoorDash
+# https://block.xyz/careers
+Block
+# https://careers.pypl.com/
+PayPal
+# https://www.shopify.com/careers
+Shopify
+# https://www.atlassian.com/company/careers
+Atlassian
+# https://www.twilio.com/company/jobs
+Twilio
+# https://careers.datadoghq.com/
+Datadog
+# https://www.cloudflare.com/careers/
+Cloudflare
+# https://www.mongodb.com/careers
+MongoDB
+# https://www.elastic.co/careers/
+Elastic
+# https://www.splunk.com/en_us/careers.html
+Splunk
+# https://careers.vmware.com/
+VMware
+# https://jobs.dell.com/
+Dell Technologies
+# https://careers.hpe.com/
+HPE
+# https://careers.qualcomm.com/
+Qualcomm
+# https://www.amd.com/en/corporate/careers.html
+AMD
+# https://jobs.intel.com/
+Intel
+
+## Tier 1C: High-Growth / AI / Modern SaaS (20)
+# https://stripe.com/jobs
+Stripe
+# https://www.figma.com/careers/
+Figma
+# https://www.notion.so/careers
+Notion
+# https://vercel.com/careers
+Vercel
+# https://supabase.com/careers
+Supabase
+# https://linear.app/careers
+Linear
+# https://www.databricks.com/company/careers
+Databricks
+# https://www.rippling.com/careers
+Rippling
+# https://ramp.com/careers
+Ramp
+# https://plaid.com/careers/
+Plaid
+# https://discord.com/careers
+Discord
+# https://www.lifeatspotify.com/jobs
+Spotify
+# https://www.redditinc.com/careers
+Reddit
+# https://www.pinterestcareers.com/
+Pinterest
+# https://careers.snap.com/
+Snap
+# https://careers.robinhood.com/
+Robinhood
+# https://www.coinbase.com/careers
+Coinbase
+# https://openai.com/careers/
+OpenAI
+# https://www.anthropic.com/careers
+Anthropic
+# https://scale.com/careers
+Scale AI
+
+## Tier 1D: Finance / Consulting / Retail Tech (11)
+# https://www.capitalonecareers.com/
+Capital One
+# https://careers.jpmorgan.com/
+JPMorgan Chase
+# https://www.goldmansachs.com/careers/
+Goldman Sachs
+# https://apply.deloitte.com/
+Deloitte
+# https://www.accenture.com/us-en/careers
+Accenture
+# https://www.mckinsey.com/careers
+McKinsey
+# https://corporate.target.com/careers
+Target
+# https://careers.walmart.com/technology
+# (existing CompanyATS row is "Walmart"; same tenant covers Global Tech)
+Walmart
+# https://careers.homedepot.com/
+Home Depot
+# https://jobs.nike.com/
+Nike
+# https://jobs.disneycareers.com/technology
+Disney
+
+## Tier 1E: Aerospace / Defense / Government Tech (6)
+# https://www.lockheedmartinjobs.com/
+Lockheed Martin
+# https://careers.rtx.com/
+Raytheon
+# https://www.northropgrumman.com/careers/
+Northrop Grumman
+# https://careers.boozallen.com/
+Booz Allen Hamilton
+# https://www.palantir.com/careers/
+Palantir
+# https://www.anduril.com/careers/
+Anduril
