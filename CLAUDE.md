@@ -148,7 +148,15 @@ companyAts            CompanyATS?       // Relation; read .industryCategory, etc
 
 Enum values: `TECHNOLOGY`, `FINANCE_AND_BANKING`, `HEALTHCARE`, `CONSULTING`, `AEROSPACE_AND_DEFENSE`, `GOVERNMENT`, `RETAIL_AND_ECOMMERCE`, `MEDIA_AND_ENTERTAINMENT`, `OTHER`.
 
-Tag rows directly in Prisma Studio or via a seed-data update. We do not infer industry — untagged rows stay null and use default scoring.
+We do not infer industry — untagged rows stay null and use default scoring. Tag rows in bulk via `scripts/tag-employer-industry.ts`:
+
+```bash
+# Input file format: Name|Industry per line (one company per line, # = comment)
+# Friendly names accepted: "Technology", "Finance & Banking", etc.
+npx tsx scripts/tag-employer-industry.ts --file path/to/industries.txt
+```
+
+Name matching is case-insensitive against `CompanyATS.companyName`. Idempotent. Unmatched names → `scripts/missing-industry-companies.txt` (no stubs are created, same pattern as the tier1 import).
 
 ## Key Data Flows
 

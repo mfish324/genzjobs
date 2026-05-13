@@ -1,0 +1,99 @@
+# Tier 1 industry categorization (best-guess starter, REVIEW BEFORE RUNNING)
+# Format: Name|Industry per line. # = comment. Friendly names normalized to enum.
+#
+# Judgment notes:
+# - Fintech (Stripe, Block, PayPal, Robinhood, Coinbase) tagged Technology, not
+#   Finance, because they are tech-first companies. Flip to Finance & Banking
+#   if your HAS profile semantics treat them as banks.
+# - Media-adjacent tech (Spotify, Reddit, Snap, Pinterest, Netflix) tagged
+#   Technology. Disney tagged Media & Entertainment because Disney is primarily
+#   a media company; flip Netflix to Media if you want consistency.
+# - Retail tech (Walmart, Target, Home Depot, Nike) tagged Retail & E-Commerce
+#   because the *company* is retail, even though they hire engineers.
+# - Defense-adjacent tech (Palantir, Anduril, Booz Allen) tagged Aerospace &
+#   Defense based on their primary customers, not their tech-stack.
+
+## Tier 1A: FAANG
+Google|Technology
+Amazon|Technology
+Meta|Technology
+Apple|Technology
+Microsoft|Technology
+Netflix|Technology
+Nvidia|Technology
+
+## Tier 1B: Enterprise / Established Tech
+Salesforce|Technology
+Adobe|Technology
+Oracle|Technology
+Cisco|Technology
+IBM|Technology
+ServiceNow|Technology
+Workday|Technology
+Snowflake|Technology
+Palo Alto Networks|Technology
+CrowdStrike|Technology
+Intuit|Technology
+Uber|Technology
+Lyft|Technology
+Airbnb|Technology
+DoorDash|Technology
+Block|Technology
+PayPal|Technology
+Shopify|Technology
+Atlassian|Technology
+Twilio|Technology
+Datadog|Technology
+Cloudflare|Technology
+MongoDB|Technology
+Elastic|Technology
+Splunk|Technology
+VMware|Technology
+Dell Technologies|Technology
+HPE|Technology
+Qualcomm|Technology
+AMD|Technology
+Intel|Technology
+
+## Tier 1C: High-Growth / AI / Modern SaaS
+Stripe|Technology
+Figma|Technology
+Notion|Technology
+Vercel|Technology
+Supabase|Technology
+Linear|Technology
+Databricks|Technology
+Rippling|Technology
+Ramp|Technology
+Plaid|Technology
+Discord|Technology
+Spotify|Technology
+Reddit|Technology
+Pinterest|Technology
+Snap|Technology
+Robinhood|Technology
+Coinbase|Technology
+OpenAI|Technology
+Anthropic|Technology
+Scale AI|Technology
+
+## Tier 1D: Finance / Consulting / Retail Tech
+Capital One|Finance & Banking
+JPMorgan Chase|Finance & Banking
+Goldman Sachs|Finance & Banking
+Deloitte|Consulting
+Accenture|Consulting
+McKinsey|Consulting
+Target|Retail & E-Commerce
+Walmart|Retail & E-Commerce
+Home Depot|Retail & E-Commerce
+Nike|Retail & E-Commerce
+Disney|Media & Entertainment
+
+## Tier 1E: Aerospace / Defense / Government Tech
+Lockheed Martin|Aerospace & Defense
+Raytheon|Aerospace & Defense
+Northrop Grumman|Aerospace & Defense
+Booz Allen Hamilton|Aerospace & Defense
+Palantir|Aerospace & Defense
+Anduril|Aerospace & Defense
